@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Agendamento - Quadra de Tênis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .slide-in { animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+        .bounce-in { animation: bounceIn 0.5s ease-out; }
+        @keyframes bounceIn { 
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.05); }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-green-50 to-blue-50 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-lg border-b-4 border-green-500">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="text-4xl">🎾</div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-800">Quadra de Tênis</h1>
+                        <p class="text-sm text-gray-600">Sistema de Agendamento</p>
+                    </div>
+                </div>
+                <div id="userInfo" class="hidden">
+                    <div class="flex items-center space-x-4">
+                        <span id="welcomeUser" class="text-gray-700 font-medium"></span>
+                        <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors">
+                            Sair
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-6 py-8">
+        <!-- Login/Register Form -->
+        <div id="authSection" class="max-w-md mx-auto bg-white rounded-xl shadow-lg p-8 fade-in">
+            <div class="text-center mb-8">
+                <div class="text-6xl mb-4">🎾</div>
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">Bem-vindo!</h2>
+                <p class="text-gray-600">Faça login ou cadastre-se para agendar sua quadra</p>
+            </div>
+
+            <!-- Login Form -->
+            <div id="loginForm">
+                <h3 class="text-xl font-semibold mb-4 text-center">Entrar</h3>
+                <form onsubmit="login(event)">
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-medium mb-2">E-mail</label>
+                        <input type="email" id="loginEmail" required 
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-gray-700 text-sm font-medium mb-2">Senha</label>
+                        <input type="password" id="loginPassword" required 
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                    </div>
+                    <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 rounded-lg transition-colors">
+                        Entrar
+                    </button>
+                </form>
+                <p class="text-center mt-4 text-gray-600">
+                    Não tem conta? 
+                    <button onclick="showRegister()" class="text-green-600 hover:text-green-700 font-medium">Cadastre-se</button>
+                </p>
+            </div>
+
+            <!-- Register Form -->
+            <div id="registerForm" class="hidden">
+                <h3 class="text-xl font-semibold mb-4 text-center">Cadastrar</h3>
+                <form onsubmit="register(event)">
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-medium mb-2">Nome Completo</label>
+                        <input type="text" id="registerName" required 
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-medium mb-2">E-mail</label>
+                        <input type="email" id="registerEmail" required 
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-medium mb-2">Telefone (opcional)</label>
+                        <input type="tel" id="registerPhone" 
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-gray-700 text-sm font-medium mb-2">Senha</label>
+                        <input type="password" id="registerPassword" required minlength="6"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-lg transition-colors">
+                        Cadastrar
+                    </button>
+                </form>
+                <p class="text-center mt-4 text-gray-600">
+                    Já tem conta? 
+                    <button onclick="showLogin()" class="text-blue-600 hover:text-blue-700 font-medium">Entrar</button>
+                </p>
+            </div>
+        </div>
+
+        <!-- Dashboard -->
+        <div id="dashboard" class="hidden">
+            <!-- Navigation Tabs -->
+            <div class="bg-white rounded-xl shadow-lg mb-8 fade-in">
+                <div class="flex border-b">
+                    <button onclick="showTab('booking')" id="bookingTab" 
+                            class="flex-1 py-4 px-6 text-center font-medium border-b-2 border-green-500 text-green-600">
+                        📅 Agendar Horário
+                    </button>
+                    <button onclick="showTab('myBookings')" id="myBookingsTab" 
+                            class="flex-1 py-4 px-6 text-center font-medium text-gray-600 hover:text-gray-800">
+                        📋 Meus Agendamentos
+                    </button>
+                    <button onclick="showTab('profile')" id="profileTab" 
+                            class="flex-1 py-4 px-6 text-center font-medium text-gray-600 hover:text-gray-800">
+                        👤 Perfil
+                    </button>
+                </div>
+            </div>
+
+            <!-- Booking Tab -->
+            <div id="bookingContent" class="fade-in">
+                <div class="bg-white rounded-xl shadow-lg p-8">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                        <span class="text-3xl mr-3">🎾</span>
+                        Agendar Horário
+                    </h2>
+                    
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <!-- Date Selection -->
+                        <div>
+                            <label class="block text-gray-700 text-sm font-medium mb-3">Selecione a Data</label>
+                            <input type="date" id="bookingDate" onchange="loadAvailableSlots()" 
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                        </div>
+
+                        <!-- Time Slots -->
+                        <div>
+                            <label class="block text-gray-700 text-sm font-medium mb-3">Horários Disponíveis</label>
+                            <div id="timeSlots" class="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto">
+                                <p class="col-span-2 text-gray-500 text-center py-4">Selecione uma data para ver os horários</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="selectedSlot" class="hidden mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <h4 class="font-medium text-green-800 mb-2">Horário Selecionado:</h4>
+                        <p id="slotDetails" class="text-green-700"></p>
+                        <button onclick="confirmBooking()" 
+                                class="mt-3 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition-colors">
+                            Confirmar Agendamento
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- My Bookings Tab -->
+            <div id="myBookingsContent" class="hidden">
+                <div class="bg-white rounded-xl shadow-lg p-8">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                        <span class="text-3xl mr-3">📋</span>
+                        Meus Agendamentos
+                    </h2>
+                    <div id="bookingsList">
+                        <!-- Bookings will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Tab -->
+            <div id="profileContent" class="hidden">
+                <div class="bg-white rounded-xl shadow-lg p-8">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                        <span class="text-3xl mr-3">👤</span>
+                        Meu Perfil
+                    </h2>
+                    <form onsubmit="updateProfile(event)">
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-gray-700 text-sm font-medium mb-2">Nome Completo</label>
+                                <input type="text" id="profileName" required 
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 text-sm font-medium mb-2">E-mail</label>
+                                <input type="email" id="profileEmail" required 
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 text-sm font-medium mb-2">Telefone</label>
+                                <input type="tel" id="profilePhone" 
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                            </div>
+                        </div>
+                        <button type="submit" class="mt-6 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors">
+                            Atualizar Dados
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl p-8 max-w-md mx-4 bounce-in">
+            <div class="text-center">
+                <div class="text-6xl mb-4">✅</div>
+                <h3 class="text-xl font-bold text-gray-800 mb-2">Sucesso!</h3>
+                <p id="successMessage" class="text-gray-600 mb-6"></p>
+                <button onclick="closeModal('successModal')" 
+                        class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition-colors">
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Modal -->
+    <div id="errorModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl p-8 max-w-md mx-4 bounce-in">
+            <div class="text-center">
+                <div class="text-6xl mb-4">❌</div>
+                <h3 class="text-xl font-bold text-gray-800 mb-2">Erro</h3>
+                <p id="errorMessage" class="text-gray-600 mb-6"></p>
+                <button onclick="closeModal('errorModal')" 
+                        class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition-colors">
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Email Modal -->
+    <div id="emailModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl p-8 max-w-lg mx-4 bounce-in relative">
+            <!-- Close button in top right corner -->
+            <button onclick="closeModal('emailModal')" 
+                    class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl font-bold w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors">
+                ×
+            </button>
+            
+            <div class="text-center">
+                <div class="text-6xl mb-4">📧</div>
+                <h3 class="text-xl font-bold text-gray-800 mb-4">E-mail Enviado</h3>
+                <div id="emailContent" class="bg-gray-50 p-4 rounded-lg text-left mb-6 text-sm">
+                    <!-- Email content will be inserted here -->
+                </div>
+                <button onclick="closeModal('emailModal')" 
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors">
+                    Fechar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentUser = null;
+        let selectedSlot = null;
+        let bookings = JSON.parse(localStorage.getItem('tennisBookings')) || [];
+        let users = JSON.parse(localStorage.getItem('tennisUsers')) || [];
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set minimum date to today
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('bookingDate').min = today;
+            
+            // Check if user is logged in
+            const savedUser = localStorage.getItem('currentTennisUser');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                showDashboard();
+            }
+        });
+
+        // Authentication functions
+        function showRegister() {
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('registerForm').classList.remove('hidden');
+        }
+
+        function showLogin() {
+            document.getElementById('registerForm').classList.add('hidden');
+            document.getElementById('loginForm').classList.remove('hidden');
+        }
+
+        function register(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('registerName').value;
+            const email = document.getElementById('registerEmail').value;
+            const phone = document.getElementById('registerPhone').value;
+            const password = document.getElementById('registerPassword').value;
+
+            // Check if user already exists
+            if (users.find(user => user.email === email)) {
+                showError('Este e-mail já está cadastrado!');
+                return;
+            }
+
+            // Create new user
+            const newUser = {
+                id: Date.now(),
+                name,
+                email,
+                phone,
+                password,
+                createdAt: new Date().toISOString()
+            };
+
+            users.push(newUser);
+            localStorage.setItem('tennisUsers', JSON.stringify(users));
+
+            currentUser = newUser;
+            localStorage.setItem('currentTennisUser', JSON.stringify(currentUser));
+
+            showSuccess('Cadastro realizado com sucesso!');
+            setTimeout(() => {
+                closeModal('successModal');
+                showDashboard();
+            }, 1500);
+        }
+
+        function login(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            const user = users.find(u => u.email === email && u.password === password);
+            
+            if (user) {
+                currentUser = user;
+                localStorage.setItem('currentTennisUser', JSON.stringify(currentUser));
+                showDashboard();
+            } else {
+                showError('E-mail ou senha incorretos!');
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('currentTennisUser');
+            document.getElementById('authSection').classList.remove('hidden');
+            document.getElementById('dashboard').classList.add('hidden');
+            document.getElementById('userInfo').classList.add('hidden');
+            
+            // Reset forms
+            document.getElementById('loginForm').reset();
+            document.getElementById('registerForm').reset();
+            showLogin();
+        }
+
+        function showDashboard() {
+            document.getElementById('authSection').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+            document.getElementById('userInfo').classList.remove('hidden');
+            document.getElementById('welcomeUser').textContent = `Olá, ${currentUser.name}`;
+            
+            loadProfile();
+            loadMyBookings();
+        }
+
+        // Tab navigation
+        function showTab(tabName) {
+            // Hide all content
+            document.getElementById('bookingContent').classList.add('hidden');
+            document.getElementById('myBookingsContent').classList.add('hidden');
+            document.getElementById('profileContent').classList.add('hidden');
+            
+            // Reset tab styles
+            document.getElementById('bookingTab').className = 'flex-1 py-4 px-6 text-center font-medium text-gray-600 hover:text-gray-800';
+            document.getElementById('myBookingsTab').className = 'flex-1 py-4 px-6 text-center font-medium text-gray-600 hover:text-gray-800';
+            document.getElementById('profileTab').className = 'flex-1 py-4 px-6 text-center font-medium text-gray-600 hover:text-gray-800';
+            
+            // Show selected content and highlight tab
+            if (tabName === 'booking') {
+                document.getElementById('bookingContent').classList.remove('hidden');
+                document.getElementById('bookingTab').className = 'flex-1 py-4 px-6 text-center font-medium border-b-2 border-green-500 text-green-600';
+            } else if (tabName === 'myBookings') {
+                document.getElementById('myBookingsContent').classList.remove('hidden');
+                document.getElementById('myBookingsTab').className = 'flex-1 py-4 px-6 text-center font-medium border-b-2 border-green-500 text-green-600';
+                loadMyBookings();
+            } else if (tabName === 'profile') {
+                document.getElementById('profileContent').classList.remove('hidden');
+                document.getElementById('profileTab').className = 'flex-1 py-4 px-6 text-center font-medium border-b-2 border-green-500 text-green-600';
+            }
+        }
+
+        // Booking functions
+        function loadAvailableSlots() {
+            const selectedDate = document.getElementById('bookingDate').value;
+            if (!selectedDate) return;
+
+            const slotsContainer = document.getElementById('timeSlots');
+            slotsContainer.innerHTML = '';
+
+            // Generate time slots from 8:00 to 22:00
+            for (let hour = 8; hour <= 22; hour++) {
+                const timeSlot = `${hour.toString().padStart(2, '0')}:00`;
+                const slotId = `${selectedDate}_${timeSlot}`;
+                
+                // Check if slot is already booked
+                const isBooked = bookings.some(booking => 
+                    booking.date === selectedDate && 
+                    booking.time === timeSlot && 
+                    booking.status === 'confirmed'
+                );
+
+                const slotButton = document.createElement('button');
+                slotButton.className = isBooked 
+                    ? 'p-3 text-sm border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed'
+                    : 'p-3 text-sm border border-gray-300 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors';
+                
+                slotButton.textContent = timeSlot;
+                slotButton.disabled = isBooked;
+                
+                if (!isBooked) {
+                    slotButton.onclick = () => selectSlot(selectedDate, timeSlot);
+                }
+
+                slotsContainer.appendChild(slotButton);
+            }
+        }
+
+        function selectSlot(date, time) {
+            selectedSlot = { date, time };
+            
+            // Update UI
+            document.querySelectorAll('#timeSlots button').forEach(btn => {
+                btn.classList.remove('border-green-500', 'bg-green-100', 'text-green-700');
+                if (!btn.disabled) {
+                    btn.classList.add('border-gray-300');
+                }
+            });
+            
+            event.target.classList.add('border-green-500', 'bg-green-100', 'text-green-700');
+            
+            // Show selected slot info
+            document.getElementById('selectedSlot').classList.remove('hidden');
+            document.getElementById('slotDetails').textContent = 
+                `${formatDate(date)} às ${time}`;
+        }
+
+        function confirmBooking() {
+            if (!selectedSlot) return;
+
+            const booking = {
+                id: Date.now(),
+                userId: currentUser.id,
+                userName: currentUser.name,
+                userEmail: currentUser.email,
+                date: selectedSlot.date,
+                time: selectedSlot.time,
+                status: 'confirmed',
+                createdAt: new Date().toISOString(),
+                code: generateBookingCode()
+            };
+
+            bookings.push(booking);
+            localStorage.setItem('tennisBookings', JSON.stringify(bookings));
+
+            // Send confirmation email
+            sendBookingEmail(booking, 'confirmation');
+
+            showSuccess('Agendamento confirmado com sucesso!');
+            
+            // Reset selection
+            selectedSlot = null;
+            document.getElementById('selectedSlot').classList.add('hidden');
+            loadAvailableSlots();
+            
+            setTimeout(() => {
+                closeModal('successModal');
+            }, 2000);
+        }
+
+        function cancelBooking(bookingId) {
+            const booking = bookings.find(b => b.id === bookingId);
+            if (!booking) return;
+
+            if (confirm('Tem certeza que deseja cancelar este agendamento?')) {
+                booking.status = 'cancelled';
+                booking.cancelledAt = new Date().toISOString();
+                
+                localStorage.setItem('tennisBookings', JSON.stringify(bookings));
+                
+                // Send cancellation email
+                sendBookingEmail(booking, 'cancellation');
+                
+                showSuccess('Agendamento cancelado com sucesso!');
+                loadMyBookings();
+                
+                setTimeout(() => {
+                    closeModal('successModal');
+                }, 2000);
+            }
+        }
+
+        // Profile functions
+        function loadProfile() {
+            document.getElementById('profileName').value = currentUser.name;
+            document.getElementById('profileEmail').value = currentUser.email;
+            document.getElementById('profilePhone').value = currentUser.phone || '';
+        }
+
+        function updateProfile(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('profileName').value;
+            const email = document.getElementById('profileEmail').value;
+            const phone = document.getElementById('profilePhone').value;
+
+            // Check if email is already used by another user
+            const existingUser = users.find(user => user.email === email && user.id !== currentUser.id);
+            if (existingUser) {
+                showError('Este e-mail já está sendo usado por outro usuário!');
+                return;
+            }
+
+            // Update user data
+            currentUser.name = name;
+            currentUser.email = email;
+            currentUser.phone = phone;
+
+            // Update in users array
+            const userIndex = users.findIndex(user => user.id === currentUser.id);
+            if (userIndex !== -1) {
+                users[userIndex] = currentUser;
+                localStorage.setItem('tennisUsers', JSON.stringify(users));
+                localStorage.setItem('currentTennisUser', JSON.stringify(currentUser));
+            }
+
+            // Update welcome message
+            document.getElementById('welcomeUser').textContent = `Olá, ${currentUser.name}`;
+
+            showSuccess('Dados atualizados com sucesso!');
+            setTimeout(() => {
+                closeModal('successModal');
+            }, 1500);
+        }
+
+        function loadMyBookings() {
+            const userBookings = bookings.filter(booking => 
+                booking.userId === currentUser.id
+            ).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+            const container = document.getElementById('bookingsList');
+            
+            if (userBookings.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8">
+                        <div class="text-6xl mb-4">📅</div>
+                        <p class="text-gray-500">Você ainda não tem agendamentos.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = userBookings.map(booking => {
+                const bookingDate = new Date(booking.date + 'T' + booking.time);
+                const now = new Date();
+                const isPast = bookingDate < now;
+                const canCancel = !isPast && booking.status === 'confirmed';
+
+                return `
+                    <div class="border border-gray-200 rounded-lg p-6 mb-4 ${booking.status === 'cancelled' ? 'bg-red-50' : isPast ? 'bg-gray-50' : 'bg-white'}">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h4 class="font-semibold text-lg text-gray-800">
+                                    ${formatDate(booking.date)} às ${booking.time}
+                                </h4>
+                                <p class="text-gray-600 mt-1">Código: ${booking.code}</p>
+                                <p class="text-sm text-gray-500 mt-2">
+                                    ${booking.status === 'confirmed' ? '✅ Confirmado' : '❌ Cancelado'}
+                                    ${isPast ? ' • Passado' : ' • Futuro'}
+                                </p>
+                            </div>
+                            <div class="flex space-x-2">
+                                ${canCancel ? `
+                                    <button onclick="cancelBooking(${booking.id})" 
+                                            class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm transition-colors">
+                                        Cancelar
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Email functions
+        function sendBookingEmail(booking, type) {
+            const isConfirmation = type === 'confirmation';
+            const subject = isConfirmation 
+                ? '🎾 Confirmação de Agendamento - Quadra de Tênis'
+                : '⚠️ Cancelamento Confirmado - Agendamento de Quadra';
+
+            const emailContent = `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+                    <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                        <div style="text-align: center; margin-bottom: 30px;">
+                            <div style="font-size: 48px; margin-bottom: 10px;">🎾</div>
+                            <h1 style="color: #2d5a27; margin: 0;">${isConfirmation ? 'Agendamento Confirmado!' : 'Agendamento Cancelado'}</h1>
+                        </div>
+                        
+                        <div style="background-color: ${isConfirmation ? '#f0f9ff' : '#fef2f2'}; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                            <h2 style="color: #374151; margin-top: 0;">Detalhes do Agendamento:</h2>
+                            <p><strong>Nome:</strong> ${booking.userName}</p>
+                            <p><strong>Data:</strong> ${formatDate(booking.date)}</p>
+                            <p><strong>Horário:</strong> ${booking.time}</p>
+                            <p><strong>Código:</strong> ${booking.code}</p>
+                            <p><strong>Status:</strong> ${isConfirmation ? 'Confirmado' : 'Cancelado'}</p>
+                        </div>
+                        
+                        ${isConfirmation ? `
+                            <div style="background-color: #fef3c7; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                                <h3 style="color: #92400e; margin-top: 0;">📋 Instruções Importantes:</h3>
+                                <ul style="color: #92400e; margin: 0;">
+                                    <li>Chegue 10 minutos antes do horário agendado</li>
+                                    <li>Traga equipamentos próprios (raquete e bolas)</li>
+                                    <li>Use roupas e calçados adequados para tênis</li>
+                                    <li>Em caso de chuva, o agendamento será reagendado</li>
+                                </ul>
+                            </div>
+                        ` : `
+                            <div style="background-color: #fee2e2; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                                <p style="color: #dc2626; margin: 0;">
+                                    <strong>Seu agendamento foi cancelado com sucesso.</strong><br>
+                                    O horário agora está disponível para outros usuários.
+                                </p>
+                            </div>
+                        `}
+                        
+                        <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+                            <p style="color: #6b7280; font-size: 14px; margin: 0;">
+                                Sistema de Agendamento - Quadra de Tênis<br>
+                                Este é um e-mail automático, não responda.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Show email modal (simulating email sending)
+            document.getElementById('emailContent').innerHTML = `
+                <div class="mb-3">
+                    <strong>Para:</strong> ${booking.userEmail}<br>
+                    <strong>Assunto:</strong> ${subject}
+                </div>
+                ${emailContent}
+            `;
+            
+            document.getElementById('emailModal').classList.remove('hidden');
+        }
+
+        // Utility functions
+        function generateBookingCode() {
+            return 'TC' + Date.now().toString().slice(-6);
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString + 'T00:00:00');
+            return date.toLocaleDateString('pt-BR', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+
+        function showSuccess(message) {
+            document.getElementById('successMessage').textContent = message;
+            document.getElementById('successModal').classList.remove('hidden');
+        }
+
+        function showError(message) {
+            document.getElementById('errorMessage').textContent = message;
+            document.getElementById('errorModal').classList.remove('hidden');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97d9137fa469f90d',t:'MTc1NzYxMzc0Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
