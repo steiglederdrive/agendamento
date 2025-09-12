@@ -2,15 +2,22 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Sistema de Agendamento - Clube de Tênis</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .time-slot {
             transition: all 0.2s ease;
+            min-height: 60px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
         .time-slot:hover {
             transform: translateY(-1px);
+        }
+        .time-slot:active {
+            transform: scale(0.98);
         }
         .booked {
             background: linear-gradient(135deg, #ef4444, #dc2626);
@@ -51,23 +58,50 @@
             border-style: solid;
             border-color: #333 transparent transparent transparent;
         }
-        .tooltip:hover .tooltiptext {
+        .tooltip:hover .tooltiptext,
+        .tooltip:active .tooltiptext {
             visibility: visible;
             opacity: 1;
+        }
+        
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            .tooltip .tooltiptext {
+                width: 180px;
+                margin-left: -90px;
+                font-size: 11px;
+                padding: 6px;
+            }
+            .time-slot {
+                min-height: 50px;
+                font-size: 14px;
+            }
+            .mobile-scroll {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+        }
+        
+        @media (max-width: 640px) {
+            .tooltip .tooltiptext {
+                width: 160px;
+                margin-left: -80px;
+                bottom: 110%;
+            }
         }
     </style>
 </head>
 <body class="bg-gradient-to-br from-green-50 to-blue-50 min-h-screen">
     <!-- Header -->
     <header class="bg-white shadow-lg">
-        <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-            <div class="flex items-center space-x-4">
-                <img src="https://i.postimg.cc/9FG4YkXP/logo.jpg" alt="Logo do Clube" class="h-12 w-auto" onerror="this.src=''; this.alt='Logo não disponível'; this.style.display='none';">
-                <h1 class="text-2xl font-bold text-gray-800">Sistema de Agendamento</h1>
+        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-2 sm:space-x-4 flex-1 min-w-0">
+                <img src="https://i.postimg.cc/9FG4YkXP/logo.jpg" alt="Logo do Clube" class="h-8 sm:h-12 w-auto flex-shrink-0" onerror="this.src=''; this.alt='Logo não disponível'; this.style.display='none';">
+                <h1 class="text-lg sm:text-2xl font-bold text-gray-800 truncate">Sistema de Agendamento</h1>
             </div>
-            <div id="userInfo" class="hidden">
-                <span id="userName" class="text-gray-600 mr-4"></span>
-                <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors">
+            <div id="userInfo" class="hidden flex-shrink-0">
+                <span id="userName" class="text-gray-600 mr-2 sm:mr-4 text-sm sm:text-base hidden sm:inline"></span>
+                <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 sm:px-4 rounded-lg transition-colors text-sm sm:text-base">
                     Sair
                 </button>
             </div>
@@ -75,12 +109,12 @@
     </header>
 
     <!-- Login/Register Form -->
-    <div id="authContainer" class="max-w-md mx-auto mt-8 bg-white rounded-xl shadow-lg p-6">
-        <div class="flex mb-6">
-            <button id="loginTab" onclick="showLogin()" class="flex-1 py-2 px-4 bg-green-500 text-white rounded-l-lg">
+    <div id="authContainer" class="max-w-md mx-auto mt-4 sm:mt-8 mx-4 sm:mx-auto bg-white rounded-xl shadow-lg p-4 sm:p-6">
+        <div class="flex mb-4 sm:mb-6">
+            <button id="loginTab" onclick="showLogin()" class="flex-1 py-2 px-3 sm:px-4 bg-green-500 text-white rounded-l-lg text-sm sm:text-base">
                 Login
             </button>
-            <button id="registerTab" onclick="showRegister()" class="flex-1 py-2 px-4 bg-gray-300 text-gray-700 rounded-r-lg">
+            <button id="registerTab" onclick="showRegister()" class="flex-1 py-2 px-3 sm:px-4 bg-gray-300 text-gray-700 rounded-r-lg text-sm sm:text-base">
                 Cadastro
             </button>
         </div>
@@ -125,42 +159,45 @@
     </div>
 
     <!-- Main App -->
-    <div id="mainApp" class="hidden max-w-7xl mx-auto px-4 py-8">
+    <div id="mainApp" class="hidden max-w-7xl mx-auto px-2 sm:px-4 py-4 sm:py-8">
         <!-- Date Navigation -->
-        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
-            <div class="flex items-center justify-between mb-4">
-                <button onclick="changeWeek(-1)" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
-                    ← Semana Anterior
+        <div class="bg-white rounded-xl shadow-lg p-3 sm:p-6 mb-4 sm:mb-8">
+            <div class="flex items-center justify-between mb-3 sm:mb-4 gap-2">
+                <button onclick="changeWeek(-1)" class="bg-blue-500 hover:bg-blue-600 text-white px-2 sm:px-4 py-2 rounded-lg transition-colors text-xs sm:text-base flex-shrink-0">
+                    <span class="hidden sm:inline">← Semana Anterior</span>
+                    <span class="sm:hidden">← Ant</span>
                 </button>
-                <div class="text-center">
-                    <h2 id="weekDisplay" class="text-xl font-bold text-gray-800">Semana Atual</h2>
-                    <p class="text-sm text-gray-600 mt-1" id="weekStatus">Agendamentos disponíveis apenas para esta semana</p>
+                <div class="text-center flex-1 min-w-0">
+                    <h2 id="weekDisplay" class="text-sm sm:text-xl font-bold text-gray-800">Semana Atual</h2>
+                    <p class="text-xs sm:text-sm text-gray-600 mt-1 hidden sm:block" id="weekStatus">Agendamentos disponíveis apenas para esta semana</p>
                 </div>
-                <button onclick="changeWeek(1)" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
-                    Semana Seguinte →
+                <button onclick="changeWeek(1)" class="bg-blue-500 hover:bg-blue-600 text-white px-2 sm:px-4 py-2 rounded-lg transition-colors text-xs sm:text-base flex-shrink-0">
+                    <span class="hidden sm:inline">Semana Seguinte →</span>
+                    <span class="sm:hidden">Prox →</span>
                 </button>
             </div>
-            <div id="dateButtons" class="grid grid-cols-7 gap-2"></div>
+            <div id="dateButtons" class="grid grid-cols-7 gap-1 sm:gap-2"></div>
         </div>
 
         <!-- Schedule Grid -->
-        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
-            <h3 class="text-lg font-bold text-gray-800 mb-4">Horários Disponíveis - <span id="selectedDateDisplay"></span></h3>
-            <div id="scheduleGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3"></div>
+        <div class="bg-white rounded-xl shadow-lg p-3 sm:p-6 mb-4 sm:mb-8">
+            <h3 class="text-base sm:text-lg font-bold text-gray-800 mb-3 sm:mb-4">Horários Disponíveis - <span id="selectedDateDisplay" class="text-sm sm:text-base"></span></h3>
+            <div id="scheduleGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3"></div>
         </div>
 
         <!-- My Bookings -->
-        <div class="bg-white rounded-xl shadow-lg p-6">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-bold text-gray-800">Meus Agendamentos</h3>
-                <button id="exportButton" onclick="exportToCSV()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center space-x-2 hidden">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="bg-white rounded-xl shadow-lg p-3 sm:p-6">
+            <div class="flex items-center justify-between mb-3 sm:mb-4 gap-2">
+                <h3 class="text-base sm:text-lg font-bold text-gray-800 flex-1 min-w-0">Meus Agendamentos</h3>
+                <button id="exportButton" onclick="exportToCSV()" class="bg-green-500 hover:bg-green-600 text-white px-2 sm:px-4 py-2 rounded-lg transition-colors flex items-center space-x-1 sm:space-x-2 hidden text-xs sm:text-base flex-shrink-0">
+                    <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                     </svg>
-                    <span>Exportar CSV</span>
+                    <span class="hidden sm:inline">Exportar CSV</span>
+                    <span class="sm:hidden">CSV</span>
                 </button>
             </div>
-            <div id="myBookings" class="space-y-3"></div>
+            <div id="myBookings" class="space-y-2 sm:space-y-3"></div>
         </div>
     </div>
 
@@ -377,7 +414,7 @@
                 const isSelected = date.toDateString() === selectedDate.toDateString();
                 
                 const button = document.createElement('button');
-                button.className = `p-3 rounded-lg text-center transition-colors ${
+                button.className = `p-2 sm:p-3 rounded-lg text-center transition-colors ${
                     isSelected 
                         ? 'bg-green-500 text-white' 
                         : isPastDate 
@@ -385,9 +422,9 @@
                         : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
                 }`;
                 button.innerHTML = `
-                    <div class="font-bold">${days[i]}</div>
-                    <div class="text-sm">${date.getDate().toString().padStart(2, '0')}</div>
-                    ${isPastDate ? '<div class="text-xs mt-1">Passado</div>' : ''}
+                    <div class="font-bold text-xs sm:text-sm">${days[i]}</div>
+                    <div class="text-xs sm:text-sm">${date.getDate().toString().padStart(2, '0')}</div>
+                    ${isPastDate ? '<div class="text-xs mt-1 hidden sm:block">Passado</div>' : ''}
                 `;
                 
                 if (!isPastDate) {
@@ -489,11 +526,11 @@
                     }
                 }
                 
-                slot.className = `time-slot p-4 rounded-lg text-center font-semibold text-white cursor-pointer ${slotClass}${tooltipClass}`;
+                slot.className = `time-slot p-2 sm:p-4 rounded-lg text-center font-semibold text-white cursor-pointer ${slotClass}${tooltipClass}`;
                 
                 slot.innerHTML = `
-                    <div class="text-lg">${timeStr}</div>
-                    <div class="text-sm mt-1">${slotText}</div>
+                    <div class="text-sm sm:text-lg">${timeStr}</div>
+                    <div class="text-xs sm:text-sm mt-1">${slotText}</div>
                     ${tooltipContent}
                 `;
                 
@@ -589,13 +626,13 @@
                 }
                 
                 container.innerHTML = allBookings.map(booking => `
-                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                        <div>
-                            <div class="font-semibold text-gray-800">${booking.date} às ${booking.time}</div>
-                            <div class="text-sm text-gray-600">Quadra de Tênis - ${booking.userName}</div>
+                    <div class="flex items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-lg gap-2">
+                        <div class="flex-1 min-w-0">
+                            <div class="font-semibold text-gray-800 text-sm sm:text-base">${booking.date} às ${booking.time}</div>
+                            <div class="text-xs sm:text-sm text-gray-600 truncate">Quadra de Tênis - ${booking.userName}</div>
                         </div>
                         <button onclick="cancelBooking('${booking.key}')" 
-                                class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors">
+                                class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 sm:px-4 rounded-lg transition-colors text-xs sm:text-base flex-shrink-0">
                             Cancelar
                         </button>
                     </div>
@@ -616,13 +653,13 @@
                 }
                 
                 container.innerHTML = userBookings.map(booking => `
-                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                        <div>
-                            <div class="font-semibold text-gray-800">${booking.date} às ${booking.time}</div>
-                            <div class="text-sm text-gray-600">Quadra de Tênis</div>
+                    <div class="flex items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-lg gap-2">
+                        <div class="flex-1 min-w-0">
+                            <div class="font-semibold text-gray-800 text-sm sm:text-base">${booking.date} às ${booking.time}</div>
+                            <div class="text-xs sm:text-sm text-gray-600">Quadra de Tênis</div>
                         </div>
                         <button onclick="cancelBooking('${booking.key}')" 
-                                class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors">
+                                class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 sm:px-4 rounded-lg transition-colors text-xs sm:text-base flex-shrink-0">
                             Cancelar
                         </button>
                     </div>
@@ -696,5 +733,5 @@
 
         // Clear saved user on logout - removed duplicate function
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97e1743a973dca76',t:'MTc1NzcwMTU5NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97e1cb8d23c0a623',t:'MTc1NzcwNTE3Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
