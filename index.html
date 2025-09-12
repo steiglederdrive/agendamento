@@ -21,6 +21,40 @@
         .my-booking {
             background: linear-gradient(135deg, #f59e0b, #d97706);
         }
+        .tooltip {
+            position: relative;
+        }
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: #333;
+            color: white;
+            text-align: center;
+            border-radius: 6px;
+            padding: 8px;
+            position: absolute;
+            z-index: 1000;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 12px;
+        }
+        .tooltip .tooltiptext::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #333 transparent transparent transparent;
+        }
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
     </style>
 </head>
 <body class="bg-gradient-to-br from-green-50 to-blue-50 min-h-screen">
@@ -117,7 +151,15 @@
 
         <!-- My Bookings -->
         <div class="bg-white rounded-xl shadow-lg p-6">
-            <h3 class="text-lg font-bold text-gray-800 mb-4">Meus Agendamentos</h3>
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-gray-800">Meus Agendamentos</h3>
+                <button id="exportButton" onclick="exportToCSV()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center space-x-2 hidden">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <span>Exportar CSV</span>
+                </button>
+            </div>
             <div id="myBookings" class="space-y-3"></div>
         </div>
     </div>
@@ -200,6 +242,25 @@
                 return;
             }
 
+            // Verificar se é o administrador
+            if (email === 'Admin' && password === 'R@@t') {
+                currentUser = { 
+                    id: 'admin', 
+                    name: 'Administrador', 
+                    email: 'Admin', 
+                    isAdmin: true 
+                };
+                localStorage.setItem('currentTennisUser', JSON.stringify(currentUser));
+                document.getElementById('userName').textContent = currentUser.name + ' (Admin)';
+                document.getElementById('authContainer').classList.add('hidden');
+                document.getElementById('userInfo').classList.remove('hidden');
+                document.getElementById('mainApp').classList.remove('hidden');
+                
+                console.log('Login de administrador realizado com sucesso!');
+                initializeApp();
+                return;
+            }
+
             // Recarregar usuários do localStorage
             users = JSON.parse(localStorage.getItem('tennisUsers') || '[]');
             console.log('Usuários disponíveis:', users);
@@ -239,6 +300,14 @@
             updateDateButtons();
             updateScheduleGrid();
             updateMyBookings();
+            
+            // Mostrar botão de exportar CSV apenas para administrador
+            const exportButton = document.getElementById('exportButton');
+            if (currentUser && currentUser.isAdmin) {
+                exportButton.classList.remove('hidden');
+            } else {
+                exportButton.classList.add('hidden');
+            }
         }
 
         function changeWeek(direction) {
@@ -405,22 +474,48 @@
                     slotText = 'Indisponível';
                 }
                 
-                slot.className = `time-slot p-4 rounded-lg text-center font-semibold text-white cursor-pointer ${slotClass}`;
+                // Adicionar tooltip para slots ocupados
+                let tooltipClass = '';
+                let tooltipContent = '';
+                if (isBooked || isMyBooking) {
+                    tooltipClass = ' tooltip';
+                    
+                    // Mostrar nome para todos os usuários
+                    const bookingUser = existingBooking ? existingBooking.userName : 'Usuário';
+                    if (isMyBooking) {
+                        tooltipContent = `<span class="tooltiptext">Seu agendamento<br>Data: ${existingBooking ? existingBooking.date : ''}<br>Horário: ${timeStr}</span>`;
+                    } else {
+                        tooltipContent = `<span class="tooltiptext">Reservado por: ${bookingUser}<br>Data: ${existingBooking ? existingBooking.date : ''}<br>Horário: ${timeStr}</span>`;
+                    }
+                }
+                
+                slot.className = `time-slot p-4 rounded-lg text-center font-semibold text-white cursor-pointer ${slotClass}${tooltipClass}`;
                 
                 slot.innerHTML = `
                     <div class="text-lg">${timeStr}</div>
                     <div class="text-sm mt-1">${slotText}</div>
+                    ${tooltipContent}
                 `;
                 
                 if (canBook) {
-                    slot.onclick = function() {
-                        console.log('Clicou no slot:', bookingKey);
-                        bookSlot(bookingKey, timeStr);
+                    slot.setAttribute('data-booking-key', bookingKey);
+                    slot.setAttribute('data-time', timeStr);
+                    slot.onclick = function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const key = this.getAttribute('data-booking-key');
+                        const time = this.getAttribute('data-time');
+                        console.log('Clicou no slot:', key, time);
+                        bookSlot(key, time);
                     };
                 } else if (isMyBooking && isCurrentWeek) {
-                    slot.onclick = function() {
-                        console.log('Clicou para cancelar:', bookingKey);
-                        cancelBooking(bookingKey);
+                    slot.setAttribute('data-booking-key', bookingKey);
+                    slot.onclick = function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const key = this.getAttribute('data-booking-key');
+                        console.log('Clicou para cancelar:', key);
+                        cancelBooking(key);
                     };
                 }
                 
@@ -479,27 +574,108 @@
 
         function updateMyBookings() {
             const container = document.getElementById('myBookings');
-            const userBookings = bookings
-                .filter(b => b.userId === currentUser.id)
-                .sort((a, b) => a.timestamp - b.timestamp);
             
-            if (userBookings.length === 0) {
-                container.innerHTML = '<p class="text-gray-500 text-center py-4">Você não possui agendamentos.</p>';
+            // Se for administrador, mostrar todos os agendamentos
+            if (currentUser && currentUser.isAdmin) {
+                const allBookings = bookings.sort((a, b) => a.timestamp - b.timestamp);
+                
+                // Atualizar título da seção
+                const sectionTitle = document.querySelector('#mainApp .bg-white:last-child h3');
+                sectionTitle.textContent = 'Todos os Agendamentos (Admin)';
+                
+                if (allBookings.length === 0) {
+                    container.innerHTML = '<p class="text-gray-500 text-center py-4">Não há agendamentos no sistema.</p>';
+                    return;
+                }
+                
+                container.innerHTML = allBookings.map(booking => `
+                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div>
+                            <div class="font-semibold text-gray-800">${booking.date} às ${booking.time}</div>
+                            <div class="text-sm text-gray-600">Quadra de Tênis - ${booking.userName}</div>
+                        </div>
+                        <button onclick="cancelBooking('${booking.key}')" 
+                                class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors">
+                            Cancelar
+                        </button>
+                    </div>
+                `).join('');
+            } else {
+                // Para usuários normais, mostrar apenas seus agendamentos
+                const userBookings = bookings
+                    .filter(b => b.userId === currentUser.id)
+                    .sort((a, b) => a.timestamp - b.timestamp);
+                
+                // Atualizar título da seção
+                const sectionTitle = document.querySelector('#mainApp .bg-white:last-child h3');
+                sectionTitle.textContent = 'Meus Agendamentos';
+                
+                if (userBookings.length === 0) {
+                    container.innerHTML = '<p class="text-gray-500 text-center py-4">Você não possui agendamentos.</p>';
+                    return;
+                }
+                
+                container.innerHTML = userBookings.map(booking => `
+                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div>
+                            <div class="font-semibold text-gray-800">${booking.date} às ${booking.time}</div>
+                            <div class="text-sm text-gray-600">Quadra de Tênis</div>
+                        </div>
+                        <button onclick="cancelBooking('${booking.key}')" 
+                                class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors">
+                            Cancelar
+                        </button>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function exportToCSV() {
+            // Verificar se é administrador
+            if (!currentUser || !currentUser.isAdmin) {
+                alert('Acesso negado. Apenas administradores podem exportar dados.');
                 return;
             }
             
-            container.innerHTML = userBookings.map(booking => `
-                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                    <div>
-                        <div class="font-semibold text-gray-800">${booking.date} às ${booking.time}</div>
-                        <div class="text-sm text-gray-600">Quadra de Tênis</div>
-                    </div>
-                    <button onclick="cancelBooking('${booking.key}')" 
-                            class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors">
-                        Cancelar
-                    </button>
-                </div>
-            `).join('');
+            // Recarregar bookings do localStorage
+            const allBookings = JSON.parse(localStorage.getItem('tennisBookings') || '[]');
+            
+            // Para administrador, exportar TODOS os agendamentos
+            const bookingsToExport = allBookings.sort((a, b) => a.timestamp - b.timestamp);
+            
+            if (bookingsToExport.length === 0) {
+                alert('Não há agendamentos para exportar.');
+                return;
+            }
+            
+            // Criar cabeçalho CSV
+            const csvHeader = 'Data,Horário,Local,Nome do Usuário\n';
+            
+            // Criar linhas CSV
+            const csvRows = bookingsToExport.map(booking => {
+                return `"${booking.date}","${booking.time}","Quadra de Tênis","${booking.userName}"`;
+            }).join('\n');
+            
+            // Combinar cabeçalho e dados
+            const csvContent = csvHeader + csvRows;
+            
+            // Criar e baixar arquivo
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            
+            if (link.download !== undefined) {
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', `todos_agendamentos_${new Date().toISOString().split('T')[0]}.csv`);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                alert('Arquivo CSV com todos os agendamentos exportado com sucesso!');
+            } else {
+                alert('Seu navegador não suporta download de arquivos.');
+            }
         }
 
         // Initialize
@@ -520,5 +696,5 @@
 
         // Clear saved user on logout - removed duplicate function
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97e0e809b010c134',t:'MTc1NzY5NTg1My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97e1743a973dca76',t:'MTc1NzcwMTU5NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
