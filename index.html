@@ -3,704 +3,522 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Agendamento - Quadra de Tênis</title>
+    <title>Sistema de Agendamento - Clube de Tênis</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-        .fade-in { animation: fadeIn 0.3s ease-in; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .slide-in { animation: slideIn 0.3s ease-out; }
-        @keyframes slideIn { from { transform: translateX(-100%); } to { transform: translateX(0); } }
-        .bounce-in { animation: bounceIn 0.5s ease-out; }
-        @keyframes bounceIn { 
-            0% { transform: scale(0.3); opacity: 0; }
-            50% { transform: scale(1.05); }
-            70% { transform: scale(0.9); }
-            100% { transform: scale(1); opacity: 1; }
+        .time-slot {
+            transition: all 0.2s ease;
+        }
+        .time-slot:hover {
+            transform: translateY(-1px);
+        }
+        .booked {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+        .available {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+        .my-booking {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
         }
     </style>
 </head>
 <body class="bg-gradient-to-br from-green-50 to-blue-50 min-h-screen">
     <!-- Header -->
-    <header class="bg-white shadow-lg border-b-4 border-green-500">
-        <div class="container mx-auto px-6 py-4">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-3">
-                    <div class="text-4xl">🎾</div>
-                    <div>
-                        <h1 class="text-2xl font-bold text-gray-800">Quadra de Tênis</h1>
-                        <p class="text-sm text-gray-600">Sistema de Agendamento</p>
-                    </div>
-                </div>
-                <div id="userInfo" class="hidden">
-                    <div class="flex items-center space-x-4">
-                        <span id="welcomeUser" class="text-gray-700 font-medium"></span>
-                        <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors">
-                            Sair
-                        </button>
-                    </div>
-                </div>
+    <header class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <img src="https://i.postimg.cc/9FG4YkXP/logo.jpg" alt="Logo do Clube" class="h-12 w-auto" onerror="this.src=''; this.alt='Logo não disponível'; this.style.display='none';">
+                <h1 class="text-2xl font-bold text-gray-800">Sistema de Agendamento</h1>
+            </div>
+            <div id="userInfo" class="hidden">
+                <span id="userName" class="text-gray-600 mr-4"></span>
+                <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors">
+                    Sair
+                </button>
             </div>
         </div>
     </header>
 
-    <!-- Main Content -->
-    <main class="container mx-auto px-6 py-8">
-        <!-- Login/Register Form -->
-        <div id="authSection" class="max-w-md mx-auto bg-white rounded-xl shadow-lg p-8 fade-in">
-            <div class="text-center mb-8">
-                <div class="text-6xl mb-4">🎾</div>
-                <h2 class="text-2xl font-bold text-gray-800 mb-2">Bem-vindo!</h2>
-                <p class="text-gray-600">Faça login ou cadastre-se para agendar sua quadra</p>
-            </div>
-
-            <!-- Login Form -->
-            <div id="loginForm">
-                <h3 class="text-xl font-semibold mb-4 text-center">Entrar</h3>
-                <form onsubmit="login(event)">
-                    <div class="mb-4">
-                        <label class="block text-gray-700 text-sm font-medium mb-2">E-mail</label>
-                        <input type="email" id="loginEmail" required 
-                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                    </div>
-                    <div class="mb-6">
-                        <label class="block text-gray-700 text-sm font-medium mb-2">Senha</label>
-                        <input type="password" id="loginPassword" required 
-                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                    </div>
-                    <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 rounded-lg transition-colors">
-                        Entrar
-                    </button>
-                </form>
-                <p class="text-center mt-4 text-gray-600">
-                    Não tem conta? 
-                    <button onclick="showRegister()" class="text-green-600 hover:text-green-700 font-medium">Cadastre-se</button>
-                </p>
-            </div>
-
-            <!-- Register Form -->
-            <div id="registerForm" class="hidden">
-                <h3 class="text-xl font-semibold mb-4 text-center">Cadastrar</h3>
-                <form onsubmit="register(event)">
-                    <div class="mb-4">
-                        <label class="block text-gray-700 text-sm font-medium mb-2">Nome Completo</label>
-                        <input type="text" id="registerName" required 
-                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-gray-700 text-sm font-medium mb-2">E-mail</label>
-                        <input type="email" id="registerEmail" required 
-                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-gray-700 text-sm font-medium mb-2">Telefone (opcional)</label>
-                        <input type="tel" id="registerPhone" 
-                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                    </div>
-                    <div class="mb-6">
-                        <label class="block text-gray-700 text-sm font-medium mb-2">Senha</label>
-                        <input type="password" id="registerPassword" required minlength="6"
-                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                    </div>
-                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-lg transition-colors">
-                        Cadastrar
-                    </button>
-                </form>
-                <p class="text-center mt-4 text-gray-600">
-                    Já tem conta? 
-                    <button onclick="showLogin()" class="text-blue-600 hover:text-blue-700 font-medium">Entrar</button>
-                </p>
-            </div>
-        </div>
-
-        <!-- Dashboard -->
-        <div id="dashboard" class="hidden">
-            <!-- Navigation Tabs -->
-            <div class="bg-white rounded-xl shadow-lg mb-8 fade-in">
-                <div class="flex border-b">
-                    <button onclick="showTab('booking')" id="bookingTab" 
-                            class="flex-1 py-4 px-6 text-center font-medium border-b-2 border-green-500 text-green-600">
-                        📅 Agendar Horário
-                    </button>
-                    <button onclick="showTab('myBookings')" id="myBookingsTab" 
-                            class="flex-1 py-4 px-6 text-center font-medium text-gray-600 hover:text-gray-800">
-                        📋 Meus Agendamentos
-                    </button>
-                    <button onclick="showTab('profile')" id="profileTab" 
-                            class="flex-1 py-4 px-6 text-center font-medium text-gray-600 hover:text-gray-800">
-                        👤 Perfil
-                    </button>
-                </div>
-            </div>
-
-            <!-- Booking Tab -->
-            <div id="bookingContent" class="fade-in">
-                <div class="bg-white rounded-xl shadow-lg p-8">
-                    <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-                        <span class="text-3xl mr-3">🎾</span>
-                        Agendar Horário
-                    </h2>
-                    
-                    <div class="grid md:grid-cols-2 gap-8">
-                        <!-- Date Selection -->
-                        <div>
-                            <label class="block text-gray-700 text-sm font-medium mb-3">Selecione a Data</label>
-                            <input type="date" id="bookingDate" onchange="loadAvailableSlots()" 
-                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                        </div>
-
-                        <!-- Time Slots -->
-                        <div>
-                            <label class="block text-gray-700 text-sm font-medium mb-3">Horários Disponíveis</label>
-                            <div id="timeSlots" class="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto">
-                                <p class="col-span-2 text-gray-500 text-center py-4">Selecione uma data para ver os horários</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="selectedSlot" class="hidden mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-                        <h4 class="font-medium text-green-800 mb-2">Horário Selecionado:</h4>
-                        <p id="slotDetails" class="text-green-700"></p>
-                        <button onclick="confirmBooking()" 
-                                class="mt-3 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition-colors">
-                            Confirmar Agendamento
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- My Bookings Tab -->
-            <div id="myBookingsContent" class="hidden">
-                <div class="bg-white rounded-xl shadow-lg p-8">
-                    <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-                        <span class="text-3xl mr-3">📋</span>
-                        Meus Agendamentos
-                    </h2>
-                    <div id="bookingsList">
-                        <!-- Bookings will be loaded here -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- Profile Tab -->
-            <div id="profileContent" class="hidden">
-                <div class="bg-white rounded-xl shadow-lg p-8">
-                    <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-                        <span class="text-3xl mr-3">👤</span>
-                        Meu Perfil
-                    </h2>
-                    <form onsubmit="updateProfile(event)">
-                        <div class="grid md:grid-cols-2 gap-6">
-                            <div>
-                                <label class="block text-gray-700 text-sm font-medium mb-2">Nome Completo</label>
-                                <input type="text" id="profileName" required 
-                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                            </div>
-                            <div>
-                                <label class="block text-gray-700 text-sm font-medium mb-2">E-mail</label>
-                                <input type="email" id="profileEmail" required 
-                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                            </div>
-                            <div>
-                                <label class="block text-gray-700 text-sm font-medium mb-2">Telefone</label>
-                                <input type="tel" id="profilePhone" 
-                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                            </div>
-                        </div>
-                        <button type="submit" class="mt-6 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors">
-                            Atualizar Dados
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <!-- Success Modal -->
-    <div id="successModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white rounded-xl p-8 max-w-md mx-4 bounce-in">
-            <div class="text-center">
-                <div class="text-6xl mb-4">✅</div>
-                <h3 class="text-xl font-bold text-gray-800 mb-2">Sucesso!</h3>
-                <p id="successMessage" class="text-gray-600 mb-6"></p>
-                <button onclick="closeModal('successModal')" 
-                        class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition-colors">
-                    OK
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Error Modal -->
-    <div id="errorModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white rounded-xl p-8 max-w-md mx-4 bounce-in">
-            <div class="text-center">
-                <div class="text-6xl mb-4">❌</div>
-                <h3 class="text-xl font-bold text-gray-800 mb-2">Erro</h3>
-                <p id="errorMessage" class="text-gray-600 mb-6"></p>
-                <button onclick="closeModal('errorModal')" 
-                        class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition-colors">
-                    OK
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Email Modal -->
-    <div id="emailModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white rounded-xl p-8 max-w-lg mx-4 bounce-in relative">
-            <!-- Close button in top right corner -->
-            <button onclick="closeModal('emailModal')" 
-                    class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl font-bold w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors">
-                ×
+    <!-- Login/Register Form -->
+    <div id="authContainer" class="max-w-md mx-auto mt-8 bg-white rounded-xl shadow-lg p-6">
+        <div class="flex mb-6">
+            <button id="loginTab" onclick="showLogin()" class="flex-1 py-2 px-4 bg-green-500 text-white rounded-l-lg">
+                Login
             </button>
-            
-            <div class="text-center">
-                <div class="text-6xl mb-4">📧</div>
-                <h3 class="text-xl font-bold text-gray-800 mb-4">E-mail Enviado</h3>
-                <div id="emailContent" class="bg-gray-50 p-4 rounded-lg text-left mb-6 text-sm">
-                    <!-- Email content will be inserted here -->
+            <button id="registerTab" onclick="showRegister()" class="flex-1 py-2 px-4 bg-gray-300 text-gray-700 rounded-r-lg">
+                Cadastro
+            </button>
+        </div>
+
+        <!-- Login Form -->
+        <form id="loginForm" onsubmit="login(event)">
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2">Email</label>
+                <input type="email" id="loginEmail" required class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500">
+            </div>
+            <div class="mb-6">
+                <label class="block text-gray-700 text-sm font-bold mb-2">Senha</label>
+                <input type="password" id="loginPassword" required class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500">
+            </div>
+            <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                Entrar
+            </button>
+        </form>
+
+        <!-- Register Form -->
+        <form id="registerForm" class="hidden" onsubmit="register(event)">
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2">Nome</label>
+                <input type="text" id="registerName" required class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500">
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2">Email</label>
+                <input type="email" id="registerEmail" required class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500">
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2">Telefone</label>
+                <input type="tel" id="registerPhone" required class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500">
+            </div>
+            <div class="mb-6">
+                <label class="block text-gray-700 text-sm font-bold mb-2">Senha</label>
+                <input type="password" id="registerPassword" required class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500">
+            </div>
+            <button type="submit" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                Cadastrar
+            </button>
+        </form>
+    </div>
+
+    <!-- Main App -->
+    <div id="mainApp" class="hidden max-w-7xl mx-auto px-4 py-8">
+        <!-- Date Navigation -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <button onclick="changeWeek(-1)" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
+                    ← Semana Anterior
+                </button>
+                <div class="text-center">
+                    <h2 id="weekDisplay" class="text-xl font-bold text-gray-800">Semana Atual</h2>
+                    <p class="text-sm text-gray-600 mt-1" id="weekStatus">Agendamentos disponíveis apenas para esta semana</p>
                 </div>
-                <button onclick="closeModal('emailModal')" 
-                        class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors">
-                    Fechar
+                <button onclick="changeWeek(1)" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
+                    Semana Seguinte →
                 </button>
             </div>
+            <div id="dateButtons" class="grid grid-cols-7 gap-2"></div>
+        </div>
+
+        <!-- Schedule Grid -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">Horários Disponíveis - <span id="selectedDateDisplay"></span></h3>
+            <div id="scheduleGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3"></div>
+        </div>
+
+        <!-- My Bookings -->
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <h3 class="text-lg font-bold text-gray-800 mb-4">Meus Agendamentos</h3>
+            <div id="myBookings" class="space-y-3"></div>
         </div>
     </div>
 
     <script>
         // Global variables
         let currentUser = null;
-        let selectedSlot = null;
-        let bookings = JSON.parse(localStorage.getItem('tennisBookings')) || [];
-        let users = JSON.parse(localStorage.getItem('tennisUsers')) || [];
+        let users = JSON.parse(localStorage.getItem('tennisUsers') || '[]');
+        let bookings = JSON.parse(localStorage.getItem('tennisBookings') || '[]');
+        let currentWeekStart = new Date();
+        let selectedDate = new Date();
 
-        // Initialize the app
-        document.addEventListener('DOMContentLoaded', function() {
-            // Set minimum date to today
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('bookingDate').min = today;
-            
-            // Check if user is logged in
-            const savedUser = localStorage.getItem('currentTennisUser');
-            if (savedUser) {
-                currentUser = JSON.parse(savedUser);
-                showDashboard();
-            }
-        });
+        // Set current week to Monday - usando 12/09/2024 como referência
+        currentWeekStart = new Date('2024-09-12');
+        currentWeekStart.setDate(currentWeekStart.getDate() - currentWeekStart.getDay() + 1);
+        selectedDate = new Date(currentWeekStart);
 
-        // Authentication functions
+        // Auth functions
+        function showLogin() {
+            document.getElementById('loginTab').className = 'flex-1 py-2 px-4 bg-green-500 text-white rounded-l-lg';
+            document.getElementById('registerTab').className = 'flex-1 py-2 px-4 bg-gray-300 text-gray-700 rounded-r-lg';
+            document.getElementById('loginForm').classList.remove('hidden');
+            document.getElementById('registerForm').classList.add('hidden');
+        }
+
         function showRegister() {
+            document.getElementById('loginTab').className = 'flex-1 py-2 px-4 bg-gray-300 text-gray-700 rounded-l-lg';
+            document.getElementById('registerTab').className = 'flex-1 py-2 px-4 bg-green-500 text-white rounded-r-lg';
             document.getElementById('loginForm').classList.add('hidden');
             document.getElementById('registerForm').classList.remove('hidden');
         }
 
-        function showLogin() {
-            document.getElementById('registerForm').classList.add('hidden');
-            document.getElementById('loginForm').classList.remove('hidden');
-        }
-
         function register(event) {
             event.preventDefault();
+            console.log('Tentando cadastrar...');
             
-            const name = document.getElementById('registerName').value;
-            const email = document.getElementById('registerEmail').value;
-            const phone = document.getElementById('registerPhone').value;
-            const password = document.getElementById('registerPassword').value;
+            const name = document.getElementById('registerName').value.trim();
+            const email = document.getElementById('registerEmail').value.trim();
+            const phone = document.getElementById('registerPhone').value.trim();
+            const password = document.getElementById('registerPassword').value.trim();
 
-            // Check if user already exists
-            if (users.find(user => user.email === email)) {
-                showError('Este e-mail já está cadastrado!');
+            console.log('Dados:', { name, email, phone, password });
+
+            if (!name || !email || !phone || !password) {
+                alert('Por favor, preencha todos os campos!');
                 return;
             }
 
-            // Create new user
-            const newUser = {
-                id: Date.now(),
-                name,
-                email,
-                phone,
-                password,
-                createdAt: new Date().toISOString()
-            };
+            // Recarregar usuários do localStorage
+            users = JSON.parse(localStorage.getItem('tennisUsers') || '[]');
+            
+            if (users.find(u => u.email === email)) {
+                alert('Email já cadastrado!');
+                return;
+            }
 
+            const newUser = { id: Date.now(), name, email, phone, password };
             users.push(newUser);
             localStorage.setItem('tennisUsers', JSON.stringify(users));
-
-            currentUser = newUser;
-            localStorage.setItem('currentTennisUser', JSON.stringify(currentUser));
-
-            showSuccess('Cadastro realizado com sucesso!');
-            setTimeout(() => {
-                closeModal('successModal');
-                showDashboard();
-            }, 1500);
+            
+            console.log('Usuário cadastrado:', newUser);
+            console.log('Total de usuários:', users.length);
+            
+            alert('Cadastro realizado com sucesso!');
+            document.getElementById('registerForm').reset();
+            showLogin();
         }
 
         function login(event) {
             event.preventDefault();
+            console.log('Tentando fazer login...');
             
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+
+            console.log('Dados de login:', { email, password });
+
+            if (!email || !password) {
+                alert('Por favor, preencha email e senha!');
+                return;
+            }
+
+            // Recarregar usuários do localStorage
+            users = JSON.parse(localStorage.getItem('tennisUsers') || '[]');
+            console.log('Usuários disponíveis:', users);
 
             const user = users.find(u => u.email === email && u.password === password);
+            console.log('Usuário encontrado:', user);
             
-            if (user) {
-                currentUser = user;
-                localStorage.setItem('currentTennisUser', JSON.stringify(currentUser));
-                showDashboard();
-            } else {
-                showError('E-mail ou senha incorretos!');
+            if (!user) {
+                alert('Email ou senha incorretos!');
+                return;
             }
+
+            currentUser = user;
+            localStorage.setItem('currentTennisUser', JSON.stringify(user));
+            document.getElementById('userName').textContent = user.name;
+            document.getElementById('authContainer').classList.add('hidden');
+            document.getElementById('userInfo').classList.remove('hidden');
+            document.getElementById('mainApp').classList.remove('hidden');
+            
+            console.log('Login realizado com sucesso!');
+            initializeApp();
         }
 
         function logout() {
             currentUser = null;
             localStorage.removeItem('currentTennisUser');
-            document.getElementById('authSection').classList.remove('hidden');
-            document.getElementById('dashboard').classList.add('hidden');
+            document.getElementById('authContainer').classList.remove('hidden');
             document.getElementById('userInfo').classList.add('hidden');
-            
-            // Reset forms
+            document.getElementById('mainApp').classList.add('hidden');
             document.getElementById('loginForm').reset();
             document.getElementById('registerForm').reset();
-            showLogin();
         }
 
-        function showDashboard() {
-            document.getElementById('authSection').classList.add('hidden');
-            document.getElementById('dashboard').classList.remove('hidden');
-            document.getElementById('userInfo').classList.remove('hidden');
-            document.getElementById('welcomeUser').textContent = `Olá, ${currentUser.name}`;
-            
-            loadProfile();
-            loadMyBookings();
+        // App functions
+        function initializeApp() {
+            updateWeekDisplay();
+            updateDateButtons();
+            updateScheduleGrid();
+            updateMyBookings();
         }
 
-        // Tab navigation
-        function showTab(tabName) {
-            // Hide all content
-            document.getElementById('bookingContent').classList.add('hidden');
-            document.getElementById('myBookingsContent').classList.add('hidden');
-            document.getElementById('profileContent').classList.add('hidden');
+        function changeWeek(direction) {
+            const newWeekStart = new Date(currentWeekStart);
+            newWeekStart.setDate(newWeekStart.getDate() + (direction * 7));
             
-            // Reset tab styles
-            document.getElementById('bookingTab').className = 'flex-1 py-4 px-6 text-center font-medium text-gray-600 hover:text-gray-800';
-            document.getElementById('myBookingsTab').className = 'flex-1 py-4 px-6 text-center font-medium text-gray-600 hover:text-gray-800';
-            document.getElementById('profileTab').className = 'flex-1 py-4 px-6 text-center font-medium text-gray-600 hover:text-gray-800';
+            // Get current week start (Monday) - usando 12/09/2024 como referência
+            const today = new Date('2024-09-12');
+            const currentWeekMonday = new Date(today);
+            currentWeekMonday.setDate(today.getDate() - today.getDay() + 1);
             
-            // Show selected content and highlight tab
-            if (tabName === 'booking') {
-                document.getElementById('bookingContent').classList.remove('hidden');
-                document.getElementById('bookingTab').className = 'flex-1 py-4 px-6 text-center font-medium border-b-2 border-green-500 text-green-600';
-            } else if (tabName === 'myBookings') {
-                document.getElementById('myBookingsContent').classList.remove('hidden');
-                document.getElementById('myBookingsTab').className = 'flex-1 py-4 px-6 text-center font-medium border-b-2 border-green-500 text-green-600';
-                loadMyBookings();
-            } else if (tabName === 'profile') {
-                document.getElementById('profileContent').classList.remove('hidden');
-                document.getElementById('profileTab').className = 'flex-1 py-4 px-6 text-center font-medium border-b-2 border-green-500 text-green-600';
+            // Permitir navegação para frente sempre, mas não para trás da semana atual
+            if (direction > 0 || newWeekStart.getTime() >= currentWeekMonday.getTime()) {
+                currentWeekStart = newWeekStart;
+                selectedDate = new Date(currentWeekStart); // Sempre começar na segunda-feira
+                updateWeekDisplay();
+                updateDateButtons();
+                updateScheduleGrid();
+            } else {
+                alert('Não é possível navegar para semanas anteriores à atual.');
             }
         }
 
-        // Booking functions
-        function loadAvailableSlots() {
-            const selectedDate = document.getElementById('bookingDate').value;
-            if (!selectedDate) return;
+        function updateWeekDisplay() {
+            const endDate = new Date(currentWeekStart);
+            endDate.setDate(endDate.getDate() + 6);
+            
+            const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
+            const startStr = currentWeekStart.toLocaleDateString('pt-BR', options);
+            const endStr = endDate.toLocaleDateString('pt-BR', options);
+            
+            // Verificar se é a semana atual - usando 12/09/2024 como referência
+            const today = new Date('2024-09-12');
+            const currentWeekMonday = new Date(today);
+            currentWeekMonday.setDate(today.getDate() - today.getDay() + 1);
+            
+            const isCurrentWeek = currentWeekStart.getTime() === currentWeekMonday.getTime();
+            const isFutureWeek = currentWeekStart > currentWeekMonday;
+            
+            document.getElementById('weekDisplay').textContent = `${startStr} - ${endStr}`;
+            
+            const statusElement = document.getElementById('weekStatus');
+            if (isCurrentWeek) {
+                statusElement.textContent = 'Agendamentos disponíveis para esta semana';
+                statusElement.className = 'text-sm text-green-600 mt-1';
+            } else if (isFutureWeek) {
+                statusElement.textContent = 'Visualização apenas - agendamentos não disponíveis';
+                statusElement.className = 'text-sm text-orange-600 mt-1';
+            }
+        }
 
-            const slotsContainer = document.getElementById('timeSlots');
-            slotsContainer.innerHTML = '';
+        function updateDateButtons() {
+            const container = document.getElementById('dateButtons');
+            container.innerHTML = '';
+            
+            const days = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+            const today = new Date('2024-09-12');
+            today.setHours(0, 0, 0, 0);
+            
+            for (let i = 0; i < 7; i++) {
+                const date = new Date(currentWeekStart);
+                date.setDate(date.getDate() + i);
+                
+                const dateOnly = new Date(date);
+                dateOnly.setHours(0, 0, 0, 0);
+                const isPastDate = dateOnly < today;
+                const isSelected = date.toDateString() === selectedDate.toDateString();
+                
+                const button = document.createElement('button');
+                button.className = `p-3 rounded-lg text-center transition-colors ${
+                    isSelected 
+                        ? 'bg-green-500 text-white' 
+                        : isPastDate 
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                }`;
+                button.innerHTML = `
+                    <div class="font-bold">${days[i]}</div>
+                    <div class="text-sm">${date.getDate().toString().padStart(2, '0')}</div>
+                    ${isPastDate ? '<div class="text-xs mt-1">Passado</div>' : ''}
+                `;
+                
+                if (!isPastDate) {
+                    button.onclick = () => selectDate(date);
+                }
+                
+                container.appendChild(button);
+            }
+        }
+
+        function selectDate(date) {
+            selectedDate = new Date(date);
+            updateDateButtons();
+            updateScheduleGrid();
+        }
+
+        function updateScheduleGrid() {
+            const container = document.getElementById('scheduleGrid');
+            container.innerHTML = '';
+            
+            // Recarregar bookings do localStorage
+            bookings = JSON.parse(localStorage.getItem('tennisBookings') || '[]');
+            
+            const dateStr = selectedDate.toDateString();
+            document.getElementById('selectedDateDisplay').textContent = 
+                selectedDate.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+
+            // Verificar se é a semana atual - usando 12/09/2024 como referência
+            const today = new Date('2024-09-12');
+            const currentWeekMonday = new Date(today);
+            currentWeekMonday.setDate(today.getDate() - today.getDay() + 1);
+            const isCurrentWeek = currentWeekStart.getTime() === currentWeekMonday.getTime();
+
+            // Check if selected date is in the past
+            today.setHours(0, 0, 0, 0);
+            const selectedDateOnly = new Date(selectedDate);
+            selectedDateOnly.setHours(0, 0, 0, 0);
+            const isPastDate = selectedDateOnly < today;
 
             // Generate time slots from 8:00 to 22:00
-            for (let hour = 8; hour <= 22; hour++) {
-                const timeSlot = `${hour.toString().padStart(2, '0')}:00`;
-                const slotId = `${selectedDate}_${timeSlot}`;
+            for (let hour = 8; hour < 22; hour++) {
+                const timeStr = `${hour.toString().padStart(2, '0')}:00`;
+                const bookingKey = `${dateStr}-${timeStr}`;
                 
-                // Check if slot is already booked
-                const isBooked = bookings.some(booking => 
-                    booking.date === selectedDate && 
-                    booking.time === timeSlot && 
-                    booking.status === 'confirmed'
-                );
-
-                const slotButton = document.createElement('button');
-                slotButton.className = isBooked 
-                    ? 'p-3 text-sm border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed'
-                    : 'p-3 text-sm border border-gray-300 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors';
+                console.log('Verificando slot:', bookingKey);
                 
-                slotButton.textContent = timeSlot;
-                slotButton.disabled = isBooked;
+                const existingBooking = bookings.find(b => b.key === bookingKey);
+                const isMyBooking = existingBooking && existingBooking.userId === currentUser.id;
+                const isBooked = existingBooking && !isMyBooking;
                 
-                if (!isBooked) {
-                    slotButton.onclick = () => selectSlot(selectedDate, timeSlot);
+                // Verificar se é horário passado no dia atual
+                let isPastHour = false;
+                if (selectedDateOnly.getTime() === today.getTime()) {
+                    // Para o dia 12/09, liberar todos os horários a partir das 8h
+                    isPastHour = false;
                 }
-
-                slotsContainer.appendChild(slotButton);
+                
+                // Só permitir agendamento na semana atual
+                const canBook = isCurrentWeek && !isBooked && !isMyBooking && !isPastDate && !isPastHour;
+                
+                const slot = document.createElement('div');
+                
+                let slotClass, slotText;
+                if (isMyBooking) {
+                    slotClass = 'my-booking';
+                    slotText = 'Meu Agendamento';
+                } else if (isBooked) {
+                    slotClass = 'booked cursor-not-allowed';
+                    slotText = 'Ocupado';
+                } else if (!isCurrentWeek) {
+                    slotClass = 'bg-gray-400 cursor-not-allowed';
+                    slotText = 'Visualização';
+                } else if (isPastDate) {
+                    slotClass = 'bg-gray-500 cursor-not-allowed';
+                    slotText = 'Data Passada';
+                } else if (isPastHour) {
+                    slotClass = 'bg-gray-500 cursor-not-allowed';
+                    slotText = 'Horário Passado';
+                } else if (canBook) {
+                    slotClass = 'available';
+                    slotText = 'Disponível';
+                } else {
+                    slotClass = 'bg-gray-400 cursor-not-allowed';
+                    slotText = 'Indisponível';
+                }
+                
+                slot.className = `time-slot p-4 rounded-lg text-center font-semibold text-white cursor-pointer ${slotClass}`;
+                
+                slot.innerHTML = `
+                    <div class="text-lg">${timeStr}</div>
+                    <div class="text-sm mt-1">${slotText}</div>
+                `;
+                
+                if (canBook) {
+                    slot.onclick = function() {
+                        console.log('Clicou no slot:', bookingKey);
+                        bookSlot(bookingKey, timeStr);
+                    };
+                } else if (isMyBooking && isCurrentWeek) {
+                    slot.onclick = function() {
+                        console.log('Clicou para cancelar:', bookingKey);
+                        cancelBooking(bookingKey);
+                    };
+                }
+                
+                container.appendChild(slot);
             }
         }
 
-        function selectSlot(date, time) {
-            selectedSlot = { date, time };
+        function bookSlot(bookingKey, timeStr) {
+            console.log('Função bookSlot chamada:', bookingKey, timeStr);
             
-            // Update UI
-            document.querySelectorAll('#timeSlots button').forEach(btn => {
-                btn.classList.remove('border-green-500', 'bg-green-100', 'text-green-700');
-                if (!btn.disabled) {
-                    btn.classList.add('border-gray-300');
-                }
-            });
-            
-            event.target.classList.add('border-green-500', 'bg-green-100', 'text-green-700');
-            
-            // Show selected slot info
-            document.getElementById('selectedSlot').classList.remove('hidden');
-            document.getElementById('slotDetails').textContent = 
-                `${formatDate(date)} às ${time}`;
-        }
-
-        function confirmBooking() {
-            if (!selectedSlot) return;
-
-            const booking = {
-                id: Date.now(),
-                userId: currentUser.id,
-                userName: currentUser.name,
-                userEmail: currentUser.email,
-                date: selectedSlot.date,
-                time: selectedSlot.time,
-                status: 'confirmed',
-                createdAt: new Date().toISOString(),
-                code: generateBookingCode()
-            };
-
-            bookings.push(booking);
-            localStorage.setItem('tennisBookings', JSON.stringify(bookings));
-
-            // Send confirmation email
-            sendBookingEmail(booking, 'confirmation');
-
-            showSuccess('Agendamento confirmado com sucesso!');
-            
-            // Reset selection
-            selectedSlot = null;
-            document.getElementById('selectedSlot').classList.add('hidden');
-            loadAvailableSlots();
-            
-            setTimeout(() => {
-                closeModal('successModal');
-            }, 2000);
-        }
-
-        function cancelBooking(bookingId) {
-            const booking = bookings.find(b => b.id === bookingId);
-            if (!booking) return;
-
-            if (confirm('Tem certeza que deseja cancelar este agendamento?')) {
-                booking.status = 'cancelled';
-                booking.cancelledAt = new Date().toISOString();
+            if (confirm(`Confirmar agendamento para ${timeStr} no dia ${selectedDate.toLocaleDateString('pt-BR')}?`)) {
+                // Recarregar bookings antes de adicionar novo
+                bookings = JSON.parse(localStorage.getItem('tennisBookings') || '[]');
                 
+                const booking = {
+                    key: bookingKey,
+                    userId: currentUser.id,
+                    userName: currentUser.name,
+                    date: selectedDate.toLocaleDateString('pt-BR'),
+                    time: timeStr,
+                    timestamp: Date.now()
+                };
+                
+                console.log('Criando agendamento:', booking);
+                
+                bookings.push(booking);
                 localStorage.setItem('tennisBookings', JSON.stringify(bookings));
                 
-                // Send cancellation email
-                sendBookingEmail(booking, 'cancellation');
+                console.log('Agendamento salvo. Total de agendamentos:', bookings.length);
                 
-                showSuccess('Agendamento cancelado com sucesso!');
-                loadMyBookings();
-                
-                setTimeout(() => {
-                    closeModal('successModal');
-                }, 2000);
+                updateScheduleGrid();
+                updateMyBookings();
+                alert('Agendamento realizado com sucesso!');
             }
         }
 
-        // Profile functions
-        function loadProfile() {
-            document.getElementById('profileName').value = currentUser.name;
-            document.getElementById('profileEmail').value = currentUser.email;
-            document.getElementById('profilePhone').value = currentUser.phone || '';
-        }
-
-        function updateProfile(event) {
-            event.preventDefault();
+        function cancelBooking(bookingKey) {
+            console.log('Função cancelBooking chamada:', bookingKey);
             
-            const name = document.getElementById('profileName').value;
-            const email = document.getElementById('profileEmail').value;
-            const phone = document.getElementById('profilePhone').value;
-
-            // Check if email is already used by another user
-            const existingUser = users.find(user => user.email === email && user.id !== currentUser.id);
-            if (existingUser) {
-                showError('Este e-mail já está sendo usado por outro usuário!');
-                return;
+            if (confirm('Deseja cancelar este agendamento?')) {
+                // Recarregar bookings antes de filtrar
+                bookings = JSON.parse(localStorage.getItem('tennisBookings') || '[]');
+                
+                console.log('Bookings antes do cancelamento:', bookings.length);
+                
+                bookings = bookings.filter(b => b.key !== bookingKey);
+                localStorage.setItem('tennisBookings', JSON.stringify(bookings));
+                
+                console.log('Bookings após cancelamento:', bookings.length);
+                
+                updateScheduleGrid();
+                updateMyBookings();
+                alert('Agendamento cancelado com sucesso!');
             }
-
-            // Update user data
-            currentUser.name = name;
-            currentUser.email = email;
-            currentUser.phone = phone;
-
-            // Update in users array
-            const userIndex = users.findIndex(user => user.id === currentUser.id);
-            if (userIndex !== -1) {
-                users[userIndex] = currentUser;
-                localStorage.setItem('tennisUsers', JSON.stringify(users));
-                localStorage.setItem('currentTennisUser', JSON.stringify(currentUser));
-            }
-
-            // Update welcome message
-            document.getElementById('welcomeUser').textContent = `Olá, ${currentUser.name}`;
-
-            showSuccess('Dados atualizados com sucesso!');
-            setTimeout(() => {
-                closeModal('successModal');
-            }, 1500);
         }
 
-        function loadMyBookings() {
-            const userBookings = bookings.filter(booking => 
-                booking.userId === currentUser.id
-            ).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-            const container = document.getElementById('bookingsList');
+        function updateMyBookings() {
+            const container = document.getElementById('myBookings');
+            const userBookings = bookings
+                .filter(b => b.userId === currentUser.id)
+                .sort((a, b) => a.timestamp - b.timestamp);
             
             if (userBookings.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center py-8">
-                        <div class="text-6xl mb-4">📅</div>
-                        <p class="text-gray-500">Você ainda não tem agendamentos.</p>
-                    </div>
-                `;
+                container.innerHTML = '<p class="text-gray-500 text-center py-4">Você não possui agendamentos.</p>';
                 return;
             }
-
-            container.innerHTML = userBookings.map(booking => {
-                const bookingDate = new Date(booking.date + 'T' + booking.time);
-                const now = new Date();
-                const isPast = bookingDate < now;
-                const canCancel = !isPast && booking.status === 'confirmed';
-
-                return `
-                    <div class="border border-gray-200 rounded-lg p-6 mb-4 ${booking.status === 'cancelled' ? 'bg-red-50' : isPast ? 'bg-gray-50' : 'bg-white'}">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <h4 class="font-semibold text-lg text-gray-800">
-                                    ${formatDate(booking.date)} às ${booking.time}
-                                </h4>
-                                <p class="text-gray-600 mt-1">Código: ${booking.code}</p>
-                                <p class="text-sm text-gray-500 mt-2">
-                                    ${booking.status === 'confirmed' ? '✅ Confirmado' : '❌ Cancelado'}
-                                    ${isPast ? ' • Passado' : ' • Futuro'}
-                                </p>
-                            </div>
-                            <div class="flex space-x-2">
-                                ${canCancel ? `
-                                    <button onclick="cancelBooking(${booking.id})" 
-                                            class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm transition-colors">
-                                        Cancelar
-                                    </button>
-                                ` : ''}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        // Email functions
-        function sendBookingEmail(booking, type) {
-            const isConfirmation = type === 'confirmation';
-            const subject = isConfirmation 
-                ? '🎾 Confirmação de Agendamento - Quadra de Tênis'
-                : '⚠️ Cancelamento Confirmado - Agendamento de Quadra';
-
-            const emailContent = `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
-                    <div style="background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-                        <div style="text-align: center; margin-bottom: 30px;">
-                            <div style="font-size: 48px; margin-bottom: 10px;">🎾</div>
-                            <h1 style="color: #2d5a27; margin: 0;">${isConfirmation ? 'Agendamento Confirmado!' : 'Agendamento Cancelado'}</h1>
-                        </div>
-                        
-                        <div style="background-color: ${isConfirmation ? '#f0f9ff' : '#fef2f2'}; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                            <h2 style="color: #374151; margin-top: 0;">Detalhes do Agendamento:</h2>
-                            <p><strong>Nome:</strong> ${booking.userName}</p>
-                            <p><strong>Data:</strong> ${formatDate(booking.date)}</p>
-                            <p><strong>Horário:</strong> ${booking.time}</p>
-                            <p><strong>Código:</strong> ${booking.code}</p>
-                            <p><strong>Status:</strong> ${isConfirmation ? 'Confirmado' : 'Cancelado'}</p>
-                        </div>
-                        
-                        ${isConfirmation ? `
-                            <div style="background-color: #fef3c7; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                                <h3 style="color: #92400e; margin-top: 0;">📋 Instruções Importantes:</h3>
-                                <ul style="color: #92400e; margin: 0;">
-                                    <li>Chegue 10 minutos antes do horário agendado</li>
-                                    <li>Traga equipamentos próprios (raquete e bolas)</li>
-                                    <li>Use roupas e calçados adequados para tênis</li>
-                                    <li>Em caso de chuva, o agendamento será reagendado</li>
-                                </ul>
-                            </div>
-                        ` : `
-                            <div style="background-color: #fee2e2; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                                <p style="color: #dc2626; margin: 0;">
-                                    <strong>Seu agendamento foi cancelado com sucesso.</strong><br>
-                                    O horário agora está disponível para outros usuários.
-                                </p>
-                            </div>
-                        `}
-                        
-                        <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-                            <p style="color: #6b7280; font-size: 14px; margin: 0;">
-                                Sistema de Agendamento - Quadra de Tênis<br>
-                                Este é um e-mail automático, não responda.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            // Show email modal (simulating email sending)
-            document.getElementById('emailContent').innerHTML = `
-                <div class="mb-3">
-                    <strong>Para:</strong> ${booking.userEmail}<br>
-                    <strong>Assunto:</strong> ${subject}
-                </div>
-                ${emailContent}
-            `;
             
-            document.getElementById('emailModal').classList.remove('hidden');
+            container.innerHTML = userBookings.map(booking => `
+                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div>
+                        <div class="font-semibold text-gray-800">${booking.date} às ${booking.time}</div>
+                        <div class="text-sm text-gray-600">Quadra de Tênis</div>
+                    </div>
+                    <button onclick="cancelBooking('${booking.key}')" 
+                            class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors">
+                        Cancelar
+                    </button>
+                </div>
+            `).join('');
         }
 
-        // Utility functions
-        function generateBookingCode() {
-            return 'TC' + Date.now().toString().slice(-6);
-        }
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if user is already logged in
+            const savedUser = localStorage.getItem('currentTennisUser');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                document.getElementById('userName').textContent = currentUser.name;
+                document.getElementById('authContainer').classList.add('hidden');
+                document.getElementById('userInfo').classList.remove('hidden');
+                document.getElementById('mainApp').classList.remove('hidden');
+                initializeApp();
+            }
+        });
 
-        function formatDate(dateString) {
-            const date = new Date(dateString + 'T00:00:00');
-            return date.toLocaleDateString('pt-BR', {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            });
-        }
+        // Save current user on login - removed duplicate function
 
-        function showSuccess(message) {
-            document.getElementById('successMessage').textContent = message;
-            document.getElementById('successModal').classList.remove('hidden');
-        }
-
-        function showError(message) {
-            document.getElementById('errorMessage').textContent = message;
-            document.getElementById('errorModal').classList.remove('hidden');
-        }
-
-        function closeModal(modalId) {
-            document.getElementById(modalId).classList.add('hidden');
-        }
+        // Clear saved user on logout - removed duplicate function
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97d9137fa469f90d',t:'MTc1NzYxMzc0Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97e0e809b010c134',t:'MTc1NzY5NTg1My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
