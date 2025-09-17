@@ -340,6 +340,30 @@
                 if (!isNaN(parsedA)) activeWeekStart = parsedA;
             } else {
                 activeWeekStart = new Date(currentWeekStart);
+
+            // restore login from localStorage (keeps user logged after refresh)
+            const savedUser = localStorage.getItem('currentUser');
+            const savedIsAdmin = localStorage.getItem('isAdmin');
+            if (savedUser) {
+                try {
+                    currentUser = JSON.parse(savedUser);
+                    isAdmin = savedIsAdmin === 'true';
+                    // show dashboards accordingly
+                    document.getElementById('loginScreen').classList.add('hidden');
+                    if (isAdmin) {
+                        document.getElementById('adminDashboard').classList.remove('hidden');
+                    } else {
+                        document.getElementById('memberDashboard').classList.remove('hidden');
+                        document.getElementById('currentMemberName').textContent = currentUser.name || '';
+                        // members should see activeWeekStart by default
+                        currentWeekStart = new Date(activeWeekStart);
+                    }
+                } catch (e) {
+                    console.error('Erro ao restaurar login do localStorage', e);
+                }
+            }
+
+    
             }
 
             // By default members view the active week
@@ -469,6 +493,10 @@
                 }
 
                 currentUser = member;
+                // persist login
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                localStorage.setItem('isAdmin', 'false');
+
                 isAdmin = false;
                 // Members always see the active week
                 currentWeekStart = new Date(activeWeekStart);
@@ -488,6 +516,10 @@
             if (user === 'Admin' && pass === 'Admin') {
                 currentUser = { name: 'Administrador' };
                 isAdmin = true;
+                // persist admin login
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                localStorage.setItem('isAdmin', 'true');
+
                 document.getElementById('adminLogin').classList.add('hidden');
                 document.getElementById('adminDashboard').classList.remove('hidden');
                 updateAdminScheduleDisplay();
@@ -503,6 +535,10 @@
             document.getElementById('memberCPF').value = '';
             document.getElementById('adminUser').value = '';
             document.getElementById('adminPass').value = '';
+            // clear persisted login
+            localStorage.removeItem('currentUser');
+            localStorage.removeItem('isAdmin');
+
             showLoginScreen();
         }
 
