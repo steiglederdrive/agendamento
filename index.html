@@ -319,6 +319,34 @@
 
         // Initialize system
         async function initSystem() {
+  // --- obter activeWeekStart do DB (se existir) ---
+  try {
+    const { data: cfg, error: cfgErr } = await client
+      .from('app_config')
+      .select('value')
+      .eq('key', 'active_week_start')
+      .maybeSingle();
+
+    if (!cfgErr && cfg && cfg.value) {
+      const d = new Date(cfg.value);
+      if (!isNaN(d)) {
+        activeWeekStart = d;
+      }
+    }
+  } catch (e) {
+    console.warn('Não foi possível obter active_week_start do DB, usando localStorage', e);
+  }
+
+  // fallback para localStorage
+  if (!activeWeekStart) {
+    const savedActiveWeek = localStorage.getItem('activeWeekStart');
+    if (savedActiveWeek) {
+      const parsedA = new Date(savedActiveWeek);
+      if (!isNaN(parsedA)) activeWeekStart = parsedA;
+    }
+  }
+  if (!activeWeekStart) activeWeekStart = new Date(currentWeekStart);
+
             // Set current week to this Monday
             const today = new Date();
             const dayOfWeek = today.getDay();
@@ -835,9 +863,27 @@
             updateAdminScheduleDisplay();
         }
 
-        function setActiveWeek() {
-            const weekDisplay = formatWeekDisplay(currentWeekStart);
-            if (confirm(`Deseja definir a semana de ${weekDisplay} como a semana vigente para agendamentos dos sócios?`)) {
+        async function setActiveWeek() {
+  const weekDisplay = formatWeekDisplay(currentWeekStart);
+  if (!confirm(`Deseja definir a semana de ${weekDisplay} como a semana vigente para os sócios?`)) return;
+
+  activeWeekStart = new Date(currentWeekStart);
+  saveWeekState();
+
+  try {
+    const iso = activeWeekStart.toISOString().split('T')[0];
+    const { error } = await client
+      .from('app_config')
+      .upsert([{ key: 'active_week_start', value: iso }], { onConflict: 'key' });
+
+    if (error) throw error;
+
+    alert('Semana vigente definida com sucesso (gravada no banco).');
+  } catch (e) {
+    console.warn('Falha ao gravar active_week_start no DB, salvo apenas local.', e);
+    alert('Semana vigente definida apenas localmente.');
+  }
+} como a semana vigente para agendamentos dos sócios?`)) {
                 activeWeekStart = new Date(currentWeekStart);
                 saveWeekState();
                 alert('Semana vigente definida com sucesso! Os sócios agora podem agendar nesta semana.');
