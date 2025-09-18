@@ -872,6 +872,26 @@
   }
   try { await loadBookings(); await loadBlocks(); } catch(e){}
   if (typeof renderAdminWeek === 'function') renderAdminWeek();
+} como vigente para todos os sócios?`)) return;
+  activeWeekStart = new Date(currentWeekStart);
+  try { localStorage.setItem('activeWeekStart', activeWeekStart.toISOString()); } catch(e){}
+  try {
+    const iso = activeWeekStart.toISOString().split('T')[0];
+    const { error } = await client.from('app_config').upsert(
+      [{ key: 'active_week_start', value: iso }], { onConflict: 'key' }
+    );
+    if (error) {
+      console.error('Erro Supabase:', error);
+      alert('Erro ao salvar semana vigente no Supabase: ' + (error.message || JSON.stringify(error)));
+    } else {
+      alert('Semana vigente definida e gravada no banco com sucesso.');
+    }
+  } catch (e) {
+    console.error('Exceção ao salvar semana vigente:', e);
+    alert('Falha ao salvar semana vigente: ' + e.message);
+  }
+  try { await loadBookings(); await loadBlocks(); } catch(e){}
+  if (typeof renderAdminWeek === 'function') renderAdminWeek();
 } como a semana vigente para agendamentos dos sócios?`)) {
                 activeWeekStart = new Date(currentWeekStart);
                 saveWeekState();
