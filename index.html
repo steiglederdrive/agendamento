@@ -1051,5 +1051,38 @@
 })();
 </script>
 
+
+<!-- Patch Supabase: leitura sincronizada da semana vigente -->
+<script>
+(async function(){
+  try {
+    const { data: cfg, error } = await client
+      .from('app_config')
+      .select('value')
+      .eq('key', 'active_week_start')
+      .maybeSingle();
+
+    if (!error && cfg && cfg.value) {
+      const parsed = new Date(cfg.value);
+      if (!isNaN(parsed)) {
+        window.activeWeekStart = parsed;
+        console.log("Semana vigente carregada do Supabase:", cfg.value);
+
+        // sincronizar no localStorage
+        try {
+          localStorage.setItem('activeWeekStart', parsed.toISOString());
+        } catch(e){}
+
+        // atualizar interface
+        try { if (typeof renderAdminWeek === "function") renderAdminWeek(); } catch(e){}
+        try { if (typeof renderMemberWeek === "function") renderMemberWeek(); } catch(e){}
+      }
+    }
+  } catch(e) {
+    console.warn("Erro ao carregar semana vigente do Supabase:", e);
+  }
+})();
+</script>
+
 </body>
 </html>
