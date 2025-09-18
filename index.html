@@ -1,808 +1,999 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clube Itapuí - Agendamento de Tênis</title>
-    <link rel="icon" type="image/jpeg" href="https://i.postimg.cc/9FG4YkXP/logo.jpg">
-    <link rel="apple-touch-icon" href="https://i.postimg.cc/9FG4YkXP/logo.jpg">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="Clube Itapuí">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Sport Itapuí - Agendamento de Tênis</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
-        .time-slot {
-            transition: all 0.2s ease;
-        }
-        .time-slot:hover {
-            transform: translateY(-1px);
-        }
-        .blocked-slot {
-            background: repeating-linear-gradient(
-                45deg,
-                #ef4444,
-                #ef4444 10px,
-                #dc2626 10px,
-                #dc2626 20px
-            );
-        }
-        .selected-for-block {
-            background: repeating-linear-gradient(
-                45deg,
-                #f59e0b,
-                #f59e0b 10px,
-                #d97706 10px,
-                #d97706 20px
-            );
-        }
+        .slot-booked { background-color: #ef4444; color: white; }
+        .slot-available { background-color: #10b981; color: white; }
+        .slot-my-booking { background-color: #3b82f6; color: white; }
     </style>
 </head>
 <body class="bg-gradient-to-br from-green-50 to-blue-50 min-h-screen">
     <!-- Login Screen -->
-    <div id="loginScreen" class="min-h-screen flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
-            <div class="text-center mb-8">
-                <img src="https://i.postimg.cc/9FG4YkXP/logo.jpg" alt="Clube Itapuí" class="w-24 h-24 mx-auto mb-4 rounded-full shadow-lg" onerror="this.src=''; this.alt='Logo não disponível'; this.style.display='none';">
-                <h1 class="text-3xl font-bold text-gray-800 mb-2">Clube Itapuí</h1>
-                <p class="text-gray-600">Sistema de Agendamento de Tênis</p>
+    <div id="loginScreen" class="min-h-screen flex items-center justify-center p-3 sm:p-4">
+        <div class="bg-white rounded-xl shadow-2xl p-4 sm:p-8 w-full max-w-sm sm:max-w-md">
+            <div class="text-center mb-6 sm:mb-8">
+                <img src="https://i.postimg.cc/9FG4YkXP/logo.jpg" alt="Sport Itapuí" class="w-16 h-16 sm:w-24 sm:h-24 mx-auto mb-3 sm:mb-4 rounded-full shadow-lg" onerror="this.style.display='none'; document.getElementById('fallbackTitle').style.display='block';">
+                <h1 id="fallbackTitle" class="text-xl sm:text-3xl font-bold text-green-800 mb-2" style="display: none;">🎾 Sport Itapuí</h1>
+                <h1 class="text-xl sm:text-3xl font-bold text-green-800 mb-2">Sport Itapuí</h1>
+                <p class="text-sm sm:text-base text-gray-600">Sistema de Agendamento de Tênis</p>
             </div>
             
-            <div class="space-y-4">
-                <button onclick="showSocioLogin()" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-4 px-6 rounded-xl transition duration-200 shadow-lg">
-                    Acesso Sócio
+            <div class="space-y-3 sm:space-y-4">
+                <button onclick="showMemberLogin()" class="w-full bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-semibold py-4 px-6 rounded-lg transition duration-200 text-base sm:text-lg">
+                    Acesso do Sócio
                 </button>
-                <button onclick="showGestorLogin()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-6 rounded-xl transition duration-200 shadow-lg">
-                    Acesso Gestor
+                <button onclick="showAdminLogin()" class="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold py-4 px-6 rounded-lg transition duration-200 text-base sm:text-lg">
+                    Painel Administrativo
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Socio Login -->
-    <div id="socioLogin" class="hidden min-h-screen flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
-            <div class="text-center mb-8">
-                <img src="https://i.postimg.cc/9FG4YkXP/logo.jpg" alt="Clube Itapuí" class="w-20 h-20 mx-auto mb-4 rounded-full shadow-lg" onerror="this.src=''; this.alt='Logo não disponível'; this.style.display='none';">
-                <h2 class="text-2xl font-bold text-gray-800 mb-2">Acesso Sócio</h2>
+    <!-- Member Login -->
+    <div id="memberLogin" class="hidden min-h-screen flex items-center justify-center p-3 sm:p-4">
+        <div class="bg-white rounded-xl shadow-2xl p-4 sm:p-8 w-full max-w-sm sm:max-w-md">
+            <div class="text-center mb-6 sm:mb-8">
+                <img src="https://i.postimg.cc/9FG4YkXP/logo.jpg" alt="Sport Itapuí" class="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-3 sm:mb-4 rounded-full shadow-lg" onerror="this.style.display='none';">
+                <h2 class="text-lg sm:text-2xl font-bold text-green-800 mb-2">Acesso do Sócio</h2>
+                <p class="text-sm sm:text-base text-gray-600">Digite seus dados para acessar</p>
             </div>
             
-            <form onsubmit="loginSocio(event)" class="space-y-6">
+            <form onsubmit="memberLogin(event)" class="space-y-4 sm:space-y-5">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Nome Completo</label>
-                    <input type="text" id="socioNome" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                    <input type="text" id="memberName" required class="w-full px-4 py-4 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">CPF</label>
-                    <input type="text" id="socioCpf" required placeholder="000.000.000-00" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                    <input type="text" id="memberCPF" required placeholder="000.000.000-00" maxlength="14" class="w-full px-4 py-4 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" oninput="formatCPF(this)" onblur="validateCPF(this)">
+                    <div id="cpfError" class="text-red-500 text-sm mt-1 hidden">CPF inválido</div>
                 </div>
-                <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-xl transition duration-200">
+                <button type="submit" class="w-full bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-semibold py-4 px-6 rounded-lg transition duration-200 text-base sm:text-lg">
                     Entrar
                 </button>
-                <button type="button" onclick="backToLogin()" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-xl transition duration-200">
+                <button type="button" onclick="showLoginScreen()" class="w-full bg-gray-500 hover:bg-gray-600 active:bg-gray-700 text-white font-semibold py-4 px-6 rounded-lg transition duration-200 text-base sm:text-lg">
                     Voltar
                 </button>
             </form>
         </div>
     </div>
 
-    <!-- Gestor Login -->
-    <div id="gestorLogin" class="hidden min-h-screen flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
+    <!-- Admin Login -->
+    <div id="adminLogin" class="hidden min-h-screen flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md">
             <div class="text-center mb-8">
-                <img src="https://i.postimg.cc/9FG4YkXP/logo.jpg" alt="Clube Itapuí" class="w-20 h-20 mx-auto mb-4 rounded-full shadow-lg" onerror="this.src=''; this.alt='Logo não disponível'; this.style.display='none';">
-                <h2 class="text-2xl font-bold text-gray-800 mb-2">Acesso Gestor</h2>
+                <img src="https://i.postimg.cc/9FG4YkXP/logo.jpg" alt="Sport Itapuí" class="w-20 h-20 mx-auto mb-4 rounded-full shadow-lg" onerror="this.style.display='none';">
+                <h2 class="text-2xl font-bold text-blue-800 mb-2">Painel Administrativo</h2>
+                <p class="text-gray-600">Acesso restrito</p>
             </div>
             
-            <form onsubmit="loginGestor(event)" class="space-y-6">
+            <form onsubmit="adminLogin(event)" class="space-y-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Usuário</label>
-                    <input type="text" id="gestorUser" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <input type="text" id="adminUser" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Senha</label>
-                    <input type="password" id="gestorPassword" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <input type="password" id="adminPass" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                 </div>
-                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition duration-200">
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200">
                     Entrar
                 </button>
-                <button type="button" onclick="backToLogin()" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-xl transition duration-200">
+                <button type="button" onclick="showLoginScreen()" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-lg transition duration-200">
                     Voltar
                 </button>
             </form>
         </div>
     </div>
 
-    <!-- Socio Dashboard -->
-    <div id="socioDashboard" class="hidden min-h-screen">
-        <!-- Header -->
-        <header class="bg-white shadow-lg">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between items-center py-4">
-                    <div class="flex items-center space-x-4">
-                        <img src="https://i.postimg.cc/9FG4YkXP/logo.jpg" alt="Clube Itapuí" class="w-12 h-12 rounded-full shadow-md" onerror="this.src=''; this.alt='Logo não disponível'; this.style.display='none';">
+    <!-- Member Dashboard -->
+    <div id="memberDashboard" class="hidden min-h-screen p-2 sm:p-4">
+        <div class="max-w-7xl mx-auto">
+            <div class="bg-white rounded-xl shadow-lg p-3 sm:p-6 mb-4 sm:mb-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
+                    <div class="flex items-center space-x-3 sm:space-x-4">
+                        <img src="https://i.postimg.cc/9FG4YkXP/logo.jpg" alt="Sport Itapuí" class="w-12 h-12 sm:w-16 sm:h-16 rounded-full shadow-lg" onerror="this.style.display='none';">
                         <div>
-                            <h1 class="text-xl font-bold text-gray-800">Clube Itapuí</h1>
-                            <p class="text-sm text-gray-600" id="currentWeekSocio"></p>
+                            <h1 class="text-lg sm:text-2xl font-bold text-green-800">🎾 Agendamento de Tênis</h1>
+                            <p class="text-sm sm:text-base text-gray-600">Bem-vindo, <span id="currentMemberName"></span></p>
                         </div>
                     </div>
-                    <div class="text-right">
-                        <p class="text-sm text-gray-600">Bem-vindo,</p>
-                        <p class="font-semibold text-gray-800" id="socioNameDisplay"></p>
-                        <button onclick="logout()" class="text-sm text-red-600 hover:text-red-800 mt-1">Sair</button>
-                    </div>
-                </div>
-            </div>
-        </header>
-
-        <!-- Main Content -->
-        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <!-- Week Navigation -->
-            <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
-                <div class="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
-                    <h2 class="text-2xl font-bold text-gray-800">Agendamento de Horários</h2>
-                    <div class="flex space-x-2">
-                        <button onclick="previousWeek()" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition duration-200">
-                            ← Semana Anterior
-                        </button>
-                        <button onclick="currentWeek()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition duration-200">
-                            Semana Atual
-                        </button>
-                        <button onclick="nextWeek()" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition duration-200">
-                            Próxima Semana →
-                        </button>
-                    </div>
+                    <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 sm:px-4 sm:py-2 rounded-lg transition duration-200 text-sm sm:text-base">
+                        Sair
+                    </button>
                 </div>
             </div>
 
-            <!-- Schedule Grid -->
-            <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
-                <div class="overflow-x-auto">
-                    <div class="grid grid-cols-8 gap-2 min-w-full">
-                        <!-- Header -->
-                        <div class="font-semibold text-center py-3 text-gray-700">Horário</div>
-                        <div class="font-semibold text-center py-3 text-gray-700">Segunda</div>
-                        <div class="font-semibold text-center py-3 text-gray-700">Terça</div>
-                        <div class="font-semibold text-center py-3 text-gray-700">Quarta</div>
-                        <div class="font-semibold text-center py-3 text-gray-700">Quinta</div>
-                        <div class="font-semibold text-center py-3 text-gray-700">Sexta</div>
-                        <div class="font-semibold text-center py-3 text-gray-700">Sábado</div>
-                        <div class="font-semibold text-center py-3 text-gray-700">Domingo</div>
-                        
-                        <!-- Time Slots -->
-                        <div id="scheduleGrid"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- My Appointments -->
-            <div class="bg-white rounded-xl shadow-lg p-6">
-                <h3 class="text-xl font-bold text-gray-800 mb-4">Meus Agendamentos</h3>
-                <div id="myAppointments" class="space-y-3"></div>
-            </div>
-        </main>
-    </div>
-
-    <!-- Gestor Dashboard -->
-    <div id="gestorDashboard" class="hidden min-h-screen">
-        <!-- Header -->
-        <header class="bg-white shadow-lg">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between items-center py-4">
-                    <div class="flex items-center space-x-4">
-                        <img src="https://i.postimg.cc/9FG4YkXP/logo.jpg" alt="Clube Itapuí" class="w-12 h-12 rounded-full shadow-md" onerror="this.src=''; this.alt='Logo não disponível'; this.style.display='none';">
-                        <div>
-                            <h1 class="text-xl font-bold text-gray-800">Clube Itapuí - Gestão</h1>
-                            <p class="text-sm text-gray-600" id="currentWeekGestor"></p>
+            <div class="bg-white rounded-xl shadow-lg p-3 sm:p-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 space-y-4 sm:space-y-0">
+                    <h2 class="text-lg sm:text-xl font-semibold text-gray-800">Semana de <span id="currentWeekDisplay"></span></h2>
+                    <div class="flex flex-wrap gap-2 sm:gap-4">
+                        <div class="flex items-center space-x-1 sm:space-x-2">
+                            <div class="w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded"></div>
+                            <span class="text-xs sm:text-sm">Disponível</span>
+                        </div>
+                        <div class="flex items-center space-x-1 sm:space-x-2">
+                            <div class="w-3 h-3 sm:w-4 sm:h-4 bg-red-500 rounded"></div>
+                            <span class="text-xs sm:text-sm">Ocupado</span>
+                        </div>
+                        <div class="flex items-center space-x-1 sm:space-x-2">
+                            <div class="w-3 h-3 sm:w-4 sm:h-4 bg-blue-500 rounded"></div>
+                            <span class="text-xs sm:text-sm">Meus agendamentos</span>
                         </div>
                     </div>
-                    <div class="text-right">
-                        <p class="text-sm text-gray-600">Gestor</p>
-                        <button onclick="logout()" class="text-sm text-red-600 hover:text-red-800 mt-1">Sair</button>
-                    </div>
                 </div>
-            </div>
-        </header>
 
-        <!-- Main Content -->
-        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <!-- Controls -->
-            <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
-                <div class="flex flex-col lg:flex-row justify-between items-center space-y-4 lg:space-y-0">
-                    <h2 class="text-2xl font-bold text-gray-800">Gestão de Horários</h2>
-                    <div class="flex flex-wrap gap-2">
-                        <button onclick="previousWeekGestor()" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition duration-200">
-                            ← Anterior
-                        </button>
-                        <button onclick="currentWeekGestor()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition duration-200">
-                            Semana Atual
-                        </button>
-                        <button onclick="nextWeekGestor()" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition duration-200">
-                            Próxima →
-                        </button>
-                        <button onclick="toggleBlockMode()" id="blockModeBtn" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition duration-200">
-                            Modo Bloqueio
-                        </button>
-                        <button onclick="showBlockManagement()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition duration-200">
-                            Gerenciar Bloqueios
-                        </button>
-                    </div>
+                <!-- Day Tabs -->
+                <div class="flex flex-wrap gap-1 mb-6 border-b border-gray-200 overflow-x-auto">
+                    <button onclick="selectDay(0)" id="dayTab0" class="day-tab flex-shrink-0 px-4 py-3 text-sm font-medium rounded-t-lg transition-colors duration-200 bg-green-600 text-white border-b-2 border-green-600 min-w-[80px] touch-manipulation">
+                        Segunda
+                    </button>
+                    <button onclick="selectDay(1)" id="dayTab1" class="day-tab flex-shrink-0 px-4 py-3 text-sm font-medium rounded-t-lg transition-colors duration-200 bg-gray-100 text-gray-600 hover:bg-gray-200 active:bg-gray-300 min-w-[80px] touch-manipulation">
+                        Terça
+                    </button>
+                    <button onclick="selectDay(2)" id="dayTab2" class="day-tab flex-shrink-0 px-4 py-3 text-sm font-medium rounded-t-lg transition-colors duration-200 bg_gray-100 text-gray-600 hover:bg-gray-200 active:bg-gray-300 min-w-[80px] touch-manipulation">
+                        Quarta
+                    </button>
+                    <button onclick="selectDay(3)" id="dayTab3" class="day-tab flex-shrink-0 px-4 py-3 text-sm font-medium rounded-t-lg transition-colors duration-200 bg-gray-100 text-gray-600 hover:bg-gray-200 active:bg-gray-300 min-w-[80px] touch-manipulation">
+                        Quinta
+                    </button>
+                    <button onclick="selectDay(4)" id="dayTab4" class="day-tab flex-shrink-0 px-4 py-3 text-sm font-medium rounded-t-lg transition-colors duration-200 bg-gray-100 text-gray-600 hover:bg-gray-200 active:bg-gray-300 min-w-[80px] touch-manipulation">
+                        Sexta
+                    </button>
+                    <button onclick="selectDay(5)" id="dayTab5" class="day-tab flex-shrink-0 px-4 py-3 text-sm font-medium rounded-t-lg transition-colors duration-200 bg-gray-100 text-gray-600 hover:bg-gray-200 active:bg-gray-300 min-w-[80px] touch-manipulation">
+                        Sábado
+                    </button>
+                    <button onclick="selectDay(6)" id="dayTab6" class="day-tab flex-shrink-0 px-4 py-3 text-sm font-medium rounded-t-lg transition-colors duration-200 bg-gray-100 text-gray-600 hover:bg-gray-200 active:bg-gray-300 min-w-[80px] touch-manipulation">
+                        Domingo
+                    </button>
                 </div>
-                
-                <div id="blockModeControls" class="hidden mt-4 p-4 bg-orange-50 rounded-lg">
-                    <div class="flex flex-wrap gap-2">
-                        <button onclick="confirmBlocks()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition duration-200">
-                            Confirmar Bloqueios
-                        </button>
-                        <button onclick="clearSelectedBlocks()" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition duration-200">
-                            Limpar Seleção
-                        </button>
-                        <button onclick="toggleBlockMode()" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition duration-200">
-                            Cancelar
-                        </button>
-                    </div>
-                    <p class="text-sm text-orange-700 mt-2">Clique nos horários para selecionar múltiplos bloqueios</p>
-                </div>
-            </div>
 
-            <!-- Schedule Grid -->
-            <div class="bg-white rounded-xl shadow-lg p-6">
-                <div class="overflow-x-auto">
-                    <div class="grid grid-cols-8 gap-2 min-w-full">
-                        <!-- Header -->
-                        <div class="font-semibold text-center py-3 text-gray-700">Horário</div>
-                        <div class="font-semibold text-center py-3 text-gray-700">Segunda</div>
-                        <div class="font-semibold text-center py-3 text-gray-700">Terça</div>
-                        <div class="font-semibold text-center py-3 text-gray-700">Quarta</div>
-                        <div class="font-semibold text-center py-3 text-gray-700">Quinta</div>
-                        <div class="font-semibold text-center py-3 text-gray-700">Sexta</div>
-                        <div class="font-semibold text-center py-3 text-gray-700">Sábado</div>
-                        <div class="font-semibold text-center py-3 text-gray-700">Domingo</div>
-                        
-                        <!-- Time Slots -->
-                        <div id="gestorScheduleGrid"></div>
+                <!-- Day Content -->
+                <div id="dayContent" class="min-h-[400px]">
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 md:gap-4" id="timeSlots">
+                        <!-- Time slots will be populated here -->
                     </div>
                 </div>
             </div>
-        </main>
-    </div>
-
-    <!-- Block Management Modal -->
-    <div id="blockManagementModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-2xl max-h-96 overflow-y-auto">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xl font-bold text-gray-800">Gerenciar Bloqueios</h3>
-                <button onclick="hideBlockManagement()" class="text-gray-500 hover:text-gray-700">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            </div>
-            <div id="blockList" class="space-y-2"></div>
         </div>
     </div>
 
-    <!-- Confirmation Modal -->
-    <div id="confirmationModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md">
-            <h3 class="text-lg font-bold text-gray-800 mb-4">Confirmar Agendamento</h3>
-            <div id="confirmationDetails" class="mb-6"></div>
-            <div class="flex space-x-4">
-                <button onclick="confirmAppointment()" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg transition duration-200">
-                    Confirmar
+    <!-- Admin Dashboard -->
+    <div id="adminDashboard" class="hidden min-h-screen p-2 sm:p-4">
+        <div class="max-w-7xl mx-auto">
+            <div class="bg-white rounded-xl shadow-lg p-3 sm:p-6 mb-4 sm:mb-6">
+                <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center space-y-4 lg:space-y-0">
+                    <div class="flex items-center space-x-3 sm:space-x-4">
+                        <img src="https://i.postimg.cc/9FG4YkXP/logo.jpg" alt="Sport Itapuí" class="w-12 h-12 sm:w-16 sm:h-16 rounded-full shadow-lg" onerror="this.style.display='none';">
+                        <div>
+                            <h1 class="text-lg sm:text-2xl font-bold text-blue-800">🎾 Painel Administrativo</h1>
+                            <p class="text-sm sm:text-base text-gray-600">Gestão de agendamentos</p>
+                        </div>
+                    </div>
+                    <div class="flex flex-col space-y-2 w-full lg:w-auto">
+                        <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                            <button onclick="previousWeek()" class="bg-gray-600 hover:bg-gray-700 active:bg-gray-800 text-white px-4 py-3 rounded-lg transition duration-200 text-sm font-medium touch-manipulation">
+                                ← Semana Anterior
+                            </button>
+                            <button onclick="nextWeek()" class="bg-gray-600 hover:bg-gray-700 active:bg-gray-800 text-white px-4 py-3 rounded-lg transition duration-200 text-sm font-medium touch-manipulation">
+                                Próxima Semana →
+                            </button>
+                        </div>
+                        <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                            <button onclick="setActiveWeek()" class="bg-purple-600 hover:bg-purple-700 active:bg-purple-800 text-white px-4 py-3 rounded-lg transition duration-200 text-sm font-medium touch-manipulation">
+                                Definir como Vigente
+                            </button>
+                            <button onclick="toggleBlockMode()" id="blockModeBtn" class="bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white px-4 py-3 rounded-lg transition duration-200 text-sm font-medium touch-manipulation">
+                                Modo Bloqueio: OFF
+                            </button>
+                            <button onclick="openBlockModal()" class="bg-yellow-600 hover:bg-yellow-700 active:bg-yellow-800 text-white px-4 py-3 rounded-lg transition duration-200 text-sm font-medium touch-manipulation">
+                                Gerenciar Bloqueios
+                            </button>
+                            <button onclick="logout()" class="bg-red-500 hover:bg-red-600 active:bg-red-700 text-white px-4 py-3 rounded-lg transition duration-200 text-sm font-medium touch-manipulation">
+                                Sair
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-lg p-3 sm:p-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6">
+                    <h2 class="text-lg sm:text-xl font-semibold text-gray-800">Todos os Agendamentos - Semana de <span id="adminCurrentWeekDisplay"></span></h2>
+                    <div id="activeWeekIndicator" class="mt-2 sm:mt-0 px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-medium hidden">
+                        ✓ Semana Vigente
+                    </div>
+                </div>
+
+                <!-- Admin Day Tabs -->
+                <div class="flex flex-wrap gap-1 mb-6 border-b border-gray-200 overflow-x-auto">
+                    <button onclick="selectAdminDay(0)" id="adminDayTab0" class="admin-day-tab flex-shrink-0 px-4 py-3 text-sm font-medium rounded-t-lg transition-colors duration-200 bg-blue-600 text-white border-b-2 border-blue-600 min-w-[80px] touch-manipulation">
+                        Segunda
+                    </button>
+                    <button onclick="selectAdminDay(1)" id="adminDayTab1" class="admin-day-tab flex-shrink-0 px-4 py-3 text-sm font-medium rounded-t-lg transition-colors duration-200 bg-gray-100 text-gray-600 hover:bg-gray-200 active:bg-gray-300 min-w-[80px] touch-manipulation">
+                        Terça
+                    </button>
+                    <button onclick="selectAdminDay(2)" id="adminDayTab2" class="admin-day-tab flex-shrink-0 px-4 py-3 text-sm font-medium rounded-t-lg transition-colors duration-200 bg-gray-100 text-gray-600 hover:bg-gray-200 active:bg-gray-300 min-w-[80px] touch-manipulation">
+                        Quarta
+                    </button>
+                    <button onclick="selectAdminDay(3)" id="adminDayTab3" class="admin-day-tab flex-shrink-0 px-4 py-3 text-sm font-medium rounded-t-lg transition-colors duration-200 bg-gray-100 text-gray-600 hover:bg-gray-200 active:bg-gray-300 min-w-[80px] touch-manipulation">
+                        Quinta
+                    </button>
+                    <button onclick="selectAdminDay(4)" id="adminDayTab4" class="admin-day-tab flex-shrink-0 px-4 py-3 text-sm font-medium rounded-t-lg transition-colors duration-200 bg-gray-100 text-gray-600 hover:bg-gray-200 active:bg-gray-300 min-w-[80px] touch-manipulation">
+                        Sexta
+                    </button>
+                    <button onclick="selectAdminDay(5)" id="adminDayTab5" class="admin-day-tab flex-shrink-0 px-4 py-3 text-sm font-medium rounded-t-lg transition-colors duration-200 bg-gray-100 text-gray-600 hover:bg-gray-200 active:bg-gray-300 min-w-[80px] touch-manipulation">
+                        Sábado
+                    </button>
+                    <button onclick="selectAdminDay(6)" id="adminDayTab6" class="admin-day-tab flex-shrink-0 px-4 py-3 text-sm font-medium rounded-t-lg transition-colors duration-200 bg-gray-100 text-gray-600 hover:bg-gray-200 active:bg-gray-300 min-w-[80px] touch-manipulation">
+                        Domingo
+                    </button>
+                </div>
+
+                <!-- Admin Day Content -->
+                <div id="adminDayContent" class="min-h-[400px]">
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4" id="adminTimeSlots">
+                        <!-- Time slots will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Booking Modal -->
+    <div id="bookingModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-3 z-50">
+        <div class="bg-white rounded-xl shadow-2xl p-5 w-full max-w-sm mx-3">
+            <h3 class="text-lg font-bold text-gray-800 mb-4 text-center">Confirmar Agendamento</h3>
+            <p class="text-base text-gray-600 mb-6 text-center">Deseja agendar o horário de <span id="bookingTime" class="font-semibold text-green-600"></span> na <span id="bookingDay" class="font-semibold text-green-600"></span>?</p>
+            <div class="flex flex-col space-y-3">
+                <button onclick="confirmBooking()" class="w-full bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-semibold py-4 px-6 rounded-lg transition duration-200 text-base touch-manipulation">
+                    Confirmar Agendamento
                 </button>
-                <button onclick="hideConfirmation()" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded-lg transition duration-200">
+                <button onclick="closeBookingModal()" class="w-full bg-gray-500 hover:bg-gray-600 active:bg-gray-700 text-white font-semibold py-4 px-6 rounded-lg transition duration-200 text-base touch-manipulation">
                     Cancelar
                 </button>
             </div>
         </div>
     </div>
 
+    <!-- Cancel Modal -->
+    <div id="cancelModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-3 z-50">
+        <div class="bg-white rounded-xl shadow-2xl p-5 w-full max-w-sm mx-3">
+            <h3 class="text-lg font-bold text-gray-800 mb-4 text-center">Cancelar Agendamento</h3>
+            <p class="text-base text-gray-600 mb-6 text-center">Deseja cancelar o agendamento de <span id="cancelTime" class="font-semibold text-red-600"></span> na <span id="cancelDay" class="font-semibold text-red-600"></span>?</p>
+            <div class="flex flex-col space-y-3">
+                <button onclick="confirmCancel()" class="w-full bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-semibold py-4 px-6 rounded-lg transition duration-200 text-base touch-manipulation">
+                    Cancelar Agendamento
+                </button>
+                <button onclick="closeCancelModal()" class="w-full bg-gray-500 hover:bg-gray-600 active:bg-gray-700 text-white font-semibold py-4 px-6 rounded-lg transition duration-200 text-base touch-manipulation">
+                    Voltar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Block Management Modal -->
+    <div id="blockModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-3 z-50">
+        <div class="bg-white rounded-xl shadow-2xl p-5 w-full max-w-md mx-3 max-h-[90vh] overflow-y-auto">
+            <h3 class="text-lg font-bold text-gray-800 mb-4 text-center">Gerenciar Bloqueios Fixos</h3>
+            
+            <div class="mb-6">
+                <h4 class="text-md font-semibold text-gray-700 mb-3">Bloqueios Ativos:</h4>
+                <div id="activeBlocksList" class="space-y-2 max-h-48 overflow-y-auto">
+                    <!-- Active blocks will be populated here -->
+                </div>
+            </div>
+
+            <div class="flex flex-col space-y-3">
+                <button onclick="closeBlockModal()" class="w-full bg-gray-500 hover:bg-gray-600 active:bg-gray-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 text-base touch-manipulation">
+                    Fechar
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // Supabase Configuration (Replace with your actual Supabase URL and anon key)
-        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
-        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
-        
-        // Initialize Supabase client
-        let supabase;
-        if (typeof window.supabase !== 'undefined') {
-            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        }
+        // -------------------------
+        // Supabase config - SUBSTITUA AQUI
+        // -------------------------
+        const supabaseUrl = "https://ycaeeghhwiieuaugivey.supabase.co"; // <-- substitua
+        const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InljYWVlZ2hod2lpZXVhdWdpdmV5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgwNzY0NjYsImV4cCI6MjA3MzY1MjQ2Nn0.OAAOVPTG-IJSy16FSVipG6qtNCu7T15qpiP361TFxFY"; // <-- substitua
+        const client = window.supabase.createClient(supabaseUrl, supabaseKey);
 
         // Global variables
         let currentUser = null;
-        let userType = null;
-        let currentWeekOffset = 0;
-        let gestorWeekOffset = 0;
-        let blockMode = false;
-        let selectedBlocks = [];
-        let pendingAppointment = null;
+        let isAdmin = false;
+        let currentWeekStart = null;
+        let activeWeekStart = null; // Week that is currently active for bookings
+        let bookings = {};
+        let blockedSlots = {}; // Fixed blocked slots that apply to future weeks
+        let isBlockMode = false; // Whether admin is in block mode
+        let selectedSlot = null;
+        let selectedDay = 0; // Currently selected day for member view
+        let selectedAdminDay = 0; // Currently selected day for admin view
 
-        // Time slots from 8:00 to 21:00
-        const timeSlots = [];
-        for (let hour = 8; hour <= 21; hour++) {
-            timeSlots.push(`${hour.toString().padStart(2, '0')}:00`);
-        }
-
-        // Days of the week
-        const daysOfWeek = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-        const dayNames = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
-
-        // Sample data (replace with Supabase queries)
-        let appointments = [];
-        let blocks = [];
-
-        // Utility functions
-        function formatCPF(cpf) {
-            return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-        }
-
-        function getWeekDates(offset = 0) {
+        // Initialize system
+        async function initSystem() {
+            // Set current week to this Monday
             const today = new Date();
-            const monday = new Date(today);
-            monday.setDate(today.getDate() - today.getDay() + 1 + (offset * 7));
-            
-            const dates = [];
-            for (let i = 0; i < 7; i++) {
-                const date = new Date(monday);
-                date.setDate(monday.getDate() + i);
-                dates.push(date);
+            const dayOfWeek = today.getDay();
+            const daysToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+            currentWeekStart = new Date(today);
+            currentWeekStart.setDate(today.getDate() + daysToMonday);
+            currentWeekStart.setHours(0, 0, 0, 0);
+
+            // restore week state from localStorage (keeps admin navigation between reloads)
+            const savedWeek = localStorage.getItem('currentWeekStart');
+            if (savedWeek) {
+                const parsed = new Date(savedWeek);
+                if (!isNaN(parsed)) currentWeekStart = parsed;
             }
-            return dates;
+
+            const savedActiveWeek = localStorage.getItem('activeWeekStart');
+            if (savedActiveWeek) {
+                const parsedA = new Date(savedActiveWeek);
+                if (!isNaN(parsedA)) activeWeekStart = parsedA;
+            } else {
+                activeWeekStart = new Date(currentWeekStart);
+            }
+
+            // By default members view the active week
+            // bookings and blocks are loaded for currentWeekStart
+            await loadBlocks();
+            await loadBookings();
+            updateScheduleDisplay();
+            updateAdminScheduleDisplay();
         }
 
-        function formatWeekRange(dates) {
-            const start = dates[0];
-            const end = dates[6];
-            return `${start.getDate().toString().padStart(2, '0')}/${(start.getMonth() + 1).toString().padStart(2, '0')} - ${end.getDate().toString().padStart(2, '0')}/${(end.getMonth() + 1).toString().padStart(2, '0')}/${end.getFullYear()}`;
+        // Save week state to localStorage (keeps week selection between reloads)
+        function saveWeekState() {
+            if (currentWeekStart) localStorage.setItem('currentWeekStart', currentWeekStart.toISOString());
+            if (activeWeekStart) localStorage.setItem('activeWeekStart', activeWeekStart.toISOString());
         }
 
-        function isCurrentWeek(offset) {
-            return offset === 0;
+        // Screen navigation
+        function showLoginScreen() {
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('memberLogin').classList.add('hidden');
+            document.getElementById('adminLogin').classList.add('hidden');
+            document.getElementById('memberDashboard').classList.add('hidden');
+            document.getElementById('adminDashboard').classList.add('hidden');
         }
 
-        function getSlotKey(day, time, weekOffset = 0) {
-            const dates = getWeekDates(weekOffset);
-            const dayIndex = daysOfWeek.indexOf(day);
-            const date = dates[dayIndex];
-            return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}_${time}`;
+        function showMemberLogin() {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('memberLogin').classList.remove('hidden');
+        }
+
+        function showAdminLogin() {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('adminLogin').classList.remove('hidden');
+        }
+
+        // CPF validation functions
+        function formatCPF(input) {
+            let value = input.value.replace(/\D/g, '');
+            value = value.replace(/(\d{3})(\d)/, '$1.$2');
+            value = value.replace(/(\d{3})(\d)/, '$1.$2');
+            value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+            input.value = value;
+        }
+
+        function validateCPF(input) {
+            const cpf = input.value.replace(/\D/g, '');
+            const errorDiv = document.getElementById('cpfError');
+            
+            if (cpf.length !== 11 || !isValidCPF(cpf)) {
+                input.classList.add('border-red-500');
+                input.classList.remove('border-gray-300');
+                errorDiv.classList.remove('hidden');
+                return false;
+            } else {
+                input.classList.remove('border-red-500');
+                input.classList.add('border-gray-300');
+                errorDiv.classList.add('hidden');
+                return true;
+            }
+        }
+
+        function isValidCPF(cpf) {
+            // Check for known invalid patterns
+            if (/^(\d)\1{10}$/.test(cpf)) return false;
+            
+            // Validate first digit
+            let sum = 0;
+            for (let i = 0; i < 9; i++) {
+                sum += parseInt(cpf.charAt(i)) * (10 - i);
+            }
+            let remainder = (sum * 10) % 11;
+            if (remainder === 10 || remainder === 11) remainder = 0;
+            if (remainder !== parseInt(cpf.charAt(9))) return false;
+            
+            // Validate second digit
+            sum = 0;
+            for (let i = 0; i < 10; i++) {
+                sum += parseInt(cpf.charAt(i)) * (11 - i);
+            }
+            remainder = (sum * 10) % 11;
+            if (remainder === 10 || remainder === 11) remainder = 0;
+            if (remainder !== parseInt(cpf.charAt(10))) return false;
+            
+            return true;
         }
 
         // Login functions
-        function showSocioLogin() {
-            document.getElementById('loginScreen').classList.add('hidden');
-            document.getElementById('socioLogin').classList.remove('hidden');
-        }
-
-        function showGestorLogin() {
-            document.getElementById('loginScreen').classList.add('hidden');
-            document.getElementById('gestorLogin').classList.remove('hidden');
-        }
-
-        function backToLogin() {
-            document.getElementById('socioLogin').classList.add('hidden');
-            document.getElementById('gestorLogin').classList.add('hidden');
-            document.getElementById('loginScreen').classList.remove('hidden');
-        }
-
-        function loginSocio(event) {
+        async function memberLogin(event) {
             event.preventDefault();
-            const nome = document.getElementById('socioNome').value;
-            const cpf = document.getElementById('socioCpf').value;
-            
-            if (nome && cpf) {
-                currentUser = { nome, cpf: formatCPF(cpf) };
-                userType = 'socio';
-                document.getElementById('socioLogin').classList.add('hidden');
-                document.getElementById('socioDashboard').classList.remove('hidden');
-                document.getElementById('socioNameDisplay').textContent = nome;
-                loadSocioDashboard();
+            const name = document.getElementById('memberName').value.trim();
+            const cpfInput = document.getElementById('memberCPF');
+            const cpf = cpfInput.value.trim();
+
+            if (!validateCPF(cpfInput)) {
+                alert('Por favor, digite um CPF válido!');
+                return;
+            }
+
+            if (name && cpf) {
+                // busca sócio por CPF
+                let { data: member, error } = await client
+                    .from('members')
+                    .select('*')
+                    .eq('cpf', cpf)
+                    .maybeSingle();
+
+                if (error) {
+                    console.error('Erro ao buscar sócio:', error);
+                    alert('Erro ao verificar sócio: ' + error.message);
+                    return;
+                }
+
+                if (!member) {
+                    // cadastra novo sócio
+                    const { data: inserted, error: insertError } = await client
+                        .from('members')
+                        .insert([{ name, cpf }])
+                        .select()
+                        .maybeSingle();
+
+                    if (insertError) {
+                        console.error('Erro ao inserir sócio:', insertError);
+                        alert('Erro ao cadastrar sócio: ' + insertError.message);
+                        return;
+                    }
+                    member = inserted;
+                }
+
+                currentUser = member;
+                isAdmin = false;
+                // Members always see the active week
+                currentWeekStart = new Date(activeWeekStart);
+                document.getElementById('currentMemberName').textContent = name;
+                document.getElementById('memberLogin').classList.add('hidden');
+                document.getElementById('memberDashboard').classList.remove('hidden');
+                await loadBookings();
+                updateScheduleDisplay();
             }
         }
 
-        function loginGestor(event) {
+        function adminLogin(event) {
             event.preventDefault();
-            const user = document.getElementById('gestorUser').value;
-            const password = document.getElementById('gestorPassword').value;
-            
-            // Simple validation (replace with actual authentication)
-            if (user === 'admin' && password === 'admin123') {
-                currentUser = { nome: 'Gestor' };
-                userType = 'gestor';
-                document.getElementById('gestorLogin').classList.add('hidden');
-                document.getElementById('gestorDashboard').classList.remove('hidden');
-                loadGestorDashboard();
+            const user = document.getElementById('adminUser').value;
+            const pass = document.getElementById('adminPass').value;
+
+            if (user === 'Admin' && pass === 'Admin') {
+                currentUser = { name: 'Administrador' };
+                isAdmin = true;
+                document.getElementById('adminLogin').classList.add('hidden');
+                document.getElementById('adminDashboard').classList.remove('hidden');
+                updateAdminScheduleDisplay();
             } else {
-                alert('Usuário ou senha incorretos');
+                alert('Usuário ou senha incorretos!');
             }
         }
 
         function logout() {
             currentUser = null;
-            userType = null;
-            currentWeekOffset = 0;
-            gestorWeekOffset = 0;
-            blockMode = false;
-            selectedBlocks = [];
-            
-            document.getElementById('socioDashboard').classList.add('hidden');
-            document.getElementById('gestorDashboard').classList.add('hidden');
-            document.getElementById('loginScreen').classList.remove('hidden');
-            
-            // Clear forms
-            document.getElementById('socioNome').value = '';
-            document.getElementById('socioCpf').value = '';
-            document.getElementById('gestorUser').value = '';
-            document.getElementById('gestorPassword').value = '';
+            isAdmin = false;
+            document.getElementById('memberName').value = '';
+            document.getElementById('memberCPF').value = '';
+            document.getElementById('adminUser').value = '';
+            document.getElementById('adminPass').value = '';
+            showLoginScreen();
         }
 
-        // Socio dashboard functions
-        function loadSocioDashboard() {
-            updateCurrentWeekDisplay();
-            generateScheduleGrid();
-            loadMyAppointments();
+        // Schedule display functions
+        function updateScheduleDisplay() {
+            const weekDisplay = formatWeekDisplay(currentWeekStart);
+            document.getElementById('currentWeekDisplay').textContent = weekDisplay;
+            updateDayContent();
         }
 
-        function updateCurrentWeekDisplay() {
-            const dates = getWeekDates(currentWeekOffset);
-            const weekRange = formatWeekRange(dates);
-            document.getElementById('currentWeekSocio').textContent = `Semana: ${weekRange}`;
-        }
-
-        function generateScheduleGrid() {
-            const grid = document.getElementById('scheduleGrid');
-            grid.innerHTML = '';
+        function selectDay(dayIndex) {
+            selectedDay = dayIndex;
             
-            timeSlots.forEach(time => {
-                // Time column
-                const timeCell = document.createElement('div');
-                timeCell.className = 'text-center py-2 font-medium text-gray-600 bg-gray-50 rounded';
-                timeCell.textContent = time;
-                grid.appendChild(timeCell);
+            // Update tab styles
+            document.querySelectorAll('.day-tab').forEach((tab, index) => {
+                if (index === dayIndex) {
+                    tab.className = 'day-tab flex-shrink-0 px-4 py-3 text-sm font-medium rounded-t-lg transition-colors duration-200 bg-green-600 text-white border-b-2 border-green-600 min-w-[80px] touch-manipulation';
+                } else {
+                    tab.className = 'day-tab flex-shrink-0 px-4 py-3 text-sm font-medium rounded-t-lg transition-colors duration-200 bg-gray-100 text-gray-600 hover:bg-gray-200 active:bg-gray-300 min-w-[80px] touch-manipulation';
+                }
+            });
+            
+            updateDayContent();
+        }
+
+        function updateDayContent() {
+            const timeSlotsContainer = document.getElementById('timeSlots');
+            timeSlotsContainer.innerHTML = '';
+
+            const hours = [];
+            for (let h = 8; h <= 21; h++) {
+                hours.push(`${h.toString().padStart(2, '0')}:00`);
+            }
+
+            hours.forEach(hour => {
+                const slotKey = `${getWeekKey()}-${selectedDay}-${hour}`;
+                const booking = bookings[slotKey];
+                const blockKey = `${selectedDay}-${hour}`;
+                const isBlocked = blockedSlots[blockKey];
                 
-                // Day columns
-                daysOfWeek.forEach(day => {
-                    const cell = document.createElement('div');
-                    const slotKey = getSlotKey(day, time, currentWeekOffset);
-                    const isBlocked = blocks.includes(slotKey);
-                    const appointment = appointments.find(apt => apt.slotKey === slotKey);
-                    const isCurrentWeekSlot = isCurrentWeek(currentWeekOffset);
-                    
-                    cell.className = 'time-slot p-2 text-center text-sm rounded cursor-pointer min-h-12 flex items-center justify-center';
-                    
-                    if (isBlocked) {
-                        cell.className += ' blocked-slot text-white';
-                        cell.textContent = 'Bloqueado';
-                    } else if (appointment) {
-                        if (appointment.userId === currentUser.cpf) {
-                            cell.className += ' bg-green-500 text-white';
-                            cell.innerHTML = `<div><div class="font-semibold">${appointment.userName}</div><button onclick="cancelAppointment('${slotKey}')" class="text-xs bg-red-500 hover:bg-red-600 px-2 py-1 rounded mt-1">Cancelar</button></div>`;
-                        } else {
-                            cell.className += ' bg-red-200 text-red-800';
-                            cell.textContent = 'Ocupado';
-                        }
-                    } else if (isCurrentWeekSlot) {
-                        cell.className += ' bg-gray-100 hover:bg-blue-100 border-2 border-dashed border-gray-300';
-                        cell.textContent = 'Disponível';
-                        cell.onclick = () => selectSlot(day, time, slotKey);
+                const slotDiv = document.createElement('div');
+                slotDiv.className = 'p-3 sm:p-4 rounded-lg border-2 text-center transition-all duration-200 cursor-pointer touch-manipulation min-h-[80px] flex flex-col justify-center';
+                
+                if (isBlocked) {
+                    slotDiv.className += ' bg-gray-800 text-white border-gray-900 cursor-not-allowed';
+                    slotDiv.innerHTML = `
+                        <div class="font-bold text-lg">${hour}</div>
+                        <div class="text-sm mt-1">🚫 Bloqueado</div>
+                        <div class="text-xs mt-1 opacity-90">Horário fixo bloqueado</div>
+                    `;
+                } else if (booking) {
+                    if (currentUser && booking.userCPF === currentUser.cpf) {
+                        slotDiv.className += ' bg-blue-500 text-white border-blue-600 hover:bg-blue-600';
+                        slotDiv.innerHTML = `
+                            <div class="font-bold text-lg">${hour}</div>
+                            <div class="text-sm mt-1">Meu agendamento</div>
+                            <div class="text-xs mt-1 opacity-90">${booking.userName}</div>
+                        `;
+                        slotDiv.onclick = () => openCancelModal(selectedDay, hour);
                     } else {
-                        cell.className += ' bg-gray-50 text-gray-400';
-                        cell.textContent = 'Indisponível';
+                        slotDiv.className += ' bg-red-500 text-white border-red-600';
+                        slotDiv.innerHTML = `
+                            <div class="font-bold text-lg">${hour}</div>
+                            <div class="text-sm mt-1">Ocupado</div>
+                            <div class="text-xs mt-1 opacity-90">${booking.userName}</div>
+                        `;
                     }
-                    
-                    grid.appendChild(cell);
-                });
+                } else {
+                    if (currentUser && canBookSlot(selectedDay, hour)) {
+                        slotDiv.className += ' bg-green-500 text-white border-green-600 hover:bg-green-600 hover:scale-105';
+                        slotDiv.innerHTML = `
+                            <div class="font-bold text-lg">${hour}</div>
+                            <div class="text-sm mt-1">Disponível</div>
+                            <div class="text-xs mt-1 opacity-90">Clique para agendar</div>
+                        `;
+                        slotDiv.onclick = () => openBookingModal(selectedDay, hour);
+                    } else {
+                        slotDiv.className += ' bg-gray-300 text-gray-600 border-gray-400 cursor-not-allowed';
+                        slotDiv.innerHTML = `
+                            <div class="font-bold text-lg">${hour}</div>
+                            <div class="text-sm mt-1">Indisponível</div>
+                            <div class="text-xs mt-1 opacity-70">Horário consecutivo</div>
+                        `;
+                    }
+                }
+                
+                timeSlotsContainer.appendChild(slotDiv);
             });
         }
 
-        function selectSlot(day, time, slotKey) {
-            if (!isCurrentWeek(currentWeekOffset)) return;
+        function updateAdminScheduleDisplay() {
+            const weekDisplay = formatWeekDisplay(currentWeekStart);
+            document.getElementById('adminCurrentWeekDisplay').textContent = weekDisplay;
             
-            const dayName = dayNames[daysOfWeek.indexOf(day)];
-            const dates = getWeekDates(currentWeekOffset);
-            const dayIndex = daysOfWeek.indexOf(day);
-            const date = dates[dayIndex];
-            const dateStr = `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
-            
-            pendingAppointment = { day, time, slotKey, dayName, dateStr };
-            
-            document.getElementById('confirmationDetails').innerHTML = `
-                <p><strong>Dia:</strong> ${dayName}, ${dateStr}</p>
-                <p><strong>Horário:</strong> ${time}</p>
-                <p><strong>Nome:</strong> ${currentUser.nome}</p>
-                <p><strong>CPF:</strong> ${currentUser.cpf}</p>
-            `;
-            
-            document.getElementById('confirmationModal').classList.remove('hidden');
-        }
-
-        function confirmAppointment() {
-            if (pendingAppointment) {
-                const appointment = {
-                    slotKey: pendingAppointment.slotKey,
-                    userId: currentUser.cpf,
-                    userName: currentUser.nome,
-                    day: pendingAppointment.day,
-                    time: pendingAppointment.time,
-                    date: pendingAppointment.dateStr
-                };
-                
-                appointments.push(appointment);
-                
-                // Here you would save to Supabase
-                // await supabase.from('appointments').insert([appointment]);
-                
-                hideConfirmation();
-                generateScheduleGrid();
-                loadMyAppointments();
+            // Show/hide active week indicator
+            const activeWeekIndicator = document.getElementById('activeWeekIndicator');
+            const isActiveWeek = currentWeekStart && activeWeekStart && (currentWeekStart.toISOString().split('T')[0] === activeWeekStart.toISOString().split('T')[0]);
+            if (isActiveWeek) {
+                activeWeekIndicator.classList.remove('hidden');
+            } else {
+                activeWeekIndicator.classList.add('hidden');
             }
+            
+            updateAdminDayContent();
         }
 
-        function hideConfirmation() {
-            document.getElementById('confirmationModal').classList.add('hidden');
-            pendingAppointment = null;
+        function selectAdminDay(dayIndex) {
+            selectedAdminDay = dayIndex;
+            
+            // Update tab styles
+            document.querySelectorAll('.admin-day-tab').forEach((tab, index) => {
+                if (index === dayIndex) {
+                    tab.className = 'admin-day-tab flex-shrink-0 px-4 py-3 text-sm font-medium rounded-t-lg transition-colors duration-200 bg-blue-600 text-white border-b-2 border-blue-600 min-w-[80px] touch-manipulation';
+                } else {
+                    tab.className = 'admin-day-tab flex-shrink-0 px-4 py-3 text-sm font-medium rounded-t-lg transition-colors duration-200 bg-gray-100 text-gray-600 hover:bg-gray-200 active:bg-gray-300 min-w-[80px] touch-manipulation';
+                }
+            });
+            
+            updateAdminDayContent();
         }
 
-        function cancelAppointment(slotKey) {
-            appointments = appointments.filter(apt => apt.slotKey !== slotKey);
-            
-            // Here you would delete from Supabase
-            // await supabase.from('appointments').delete().eq('slotKey', slotKey);
-            
-            generateScheduleGrid();
-            loadMyAppointments();
+        function updateAdminDayContent() {
+            const timeSlotsContainer = document.getElementById('adminTimeSlots');
+            timeSlotsContainer.innerHTML = '';
+
+            const hours = [];
+            for (let h = 8; h <= 21; h++) {
+                hours.push(`${h.toString().padStart(2, '0')}:00`);
+            }
+
+            hours.forEach(hour => {
+                const slotKey = `${getWeekKey()}-${selectedAdminDay}-${hour}`;
+                const booking = bookings[slotKey];
+                const blockKey = `${selectedAdminDay}-${hour}`;
+                const isBlocked = blockedSlots[blockKey];
+                
+                const slotDiv = document.createElement('div');
+                slotDiv.className = 'p-3 sm:p-4 rounded-lg border-2 text-center transition-all duration-200 min-h-[80px] flex flex-col justify-center cursor-pointer touch-manipulation';
+                
+                if (isBlocked) {
+                    slotDiv.className += ' bg-gray-800 text-white border-gray-900';
+                    slotDiv.innerHTML = `
+                        <div class="font-bold text-lg">${hour}</div>
+                        <div class="text-sm mt-1">🚫 Bloqueado Fixo</div>
+                        <div class="text-xs mt-1 opacity-90">Clique para desbloquear</div>
+                    `;
+                    slotDiv.onclick = () => toggleBlockSlot(selectedAdminDay, hour);
+                } else if (booking) {
+                    slotDiv.className += ' bg-red-500 text-white border-red-600';
+                    slotDiv.innerHTML = `
+                        <div class="font-bold text-lg">${hour}</div>
+                        <div class="text-sm mt-1 font-semibold">${booking.userName}</div>
+                        <div class="text-xs mt-1 opacity-90">CPF: ${booking.userCPF}</div>
+                    `;
+                    if (isBlockMode) {
+                        slotDiv.innerHTML += `<div class="text-xs mt-1 opacity-70">Modo bloqueio ativo</div>`;
+                    }
+                } else {
+                    if (isBlockMode) {
+                        slotDiv.className += ' bg-orange-500 text-white border-orange-600 hover:bg-orange-600';
+                        slotDiv.innerHTML = `
+                            <div class="font-bold text-lg">${hour}</div>
+                            <div class="text-sm mt-1">Clique para Bloquear</div>
+                            <div class="text-xs mt-1 opacity-90">Bloqueio fixo</div>
+                        `;
+                        slotDiv.onclick = () => toggleBlockSlot(selectedAdminDay, hour);
+                    } else {
+                        slotDiv.className += ' bg-green-500 text-white border-green-600';
+                        slotDiv.innerHTML = `
+                            <div class="font-bold text-lg">${hour}</div>
+                            <div class="text-sm mt-1">Disponível</div>
+                            <div class="text-xs mt-1 opacity-90">Sem agendamento</div>
+                        `;
+                    }
+                }
+                
+                timeSlotsContainer.appendChild(slotDiv);
+            });
         }
 
-        function loadMyAppointments() {
-            const myAppointments = appointments.filter(apt => apt.userId === currentUser.cpf);
-            const container = document.getElementById('myAppointments');
+        // Booking logic
+        function canBookSlot(dayIndex, hour) {
+            // Check if slot is blocked
+            const blockKey = `${dayIndex}-${hour}`;
+            if (blockedSlots[blockKey]) {
+                return false;
+            }
+
+            if (!currentUser) return false;
+
+            const weekKey = getWeekKey();
+            // Check for consecutive bookings by this user in the same day/week
+            const currentHour = parseInt(hour.split(':')[0]);
+            const prevHour = `${(currentHour - 1).toString().padStart(2, '0')}:00`;
+            const nextHour = `${(currentHour + 1).toString().padStart(2, '0')}:00`;
             
-            if (myAppointments.length === 0) {
-                container.innerHTML = '<p class="text-gray-500 text-center py-4">Nenhum agendamento encontrado</p>';
+            const prevSlotKey = `${weekKey}-${dayIndex}-${prevHour}`;
+            const nextSlotKey = `${weekKey}-${dayIndex}-${nextHour}`;
+            
+            if ((bookings[prevSlotKey]?.userCPF === currentUser.cpf) || 
+                (bookings[nextSlotKey]?.userCPF === currentUser.cpf)) {
+                return false;
+            }
+
+            // Also ensure the slot isn't already booked
+            const thisSlotKey = `${weekKey}-${dayIndex}-${hour}`;
+            if (bookings[thisSlotKey]) return false;
+
+            return true;
+        }
+
+        function openBookingModal(dayIndex, hour) {
+            if (!canBookSlot(dayIndex, hour)) {
+                alert('Você não pode agendar horários consecutivos ou horário bloqueado!');
                 return;
             }
-            
-            container.innerHTML = myAppointments.map(apt => `
-                <div class="flex justify-between items-center p-4 bg-green-50 rounded-lg border border-green-200">
-                    <div>
-                        <p class="font-semibold text-green-800">${apt.date} - ${apt.time}</p>
-                        <p class="text-sm text-green-600">${apt.userName}</p>
-                    </div>
-                    <button onclick="cancelAppointment('${apt.slotKey}')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition duration-200">
-                        Cancelar
-                    </button>
-                </div>
-            `).join('');
+
+            selectedSlot = { dayIndex, hour };
+            const days = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo'];
+            document.getElementById('bookingTime').textContent = hour;
+            document.getElementById('bookingDay').textContent = days[dayIndex];
+            document.getElementById('bookingModal').classList.remove('hidden');
         }
 
-        // Week navigation for socio
-        function previousWeek() {
-            currentWeekOffset--;
-            updateCurrentWeekDisplay();
-            generateScheduleGrid();
+        function closeBookingModal() {
+            document.getElementById('bookingModal').classList.add('hidden');
+            selectedSlot = null;
         }
 
-        function currentWeek() {
-            currentWeekOffset = 0;
-            updateCurrentWeekDisplay();
-            generateScheduleGrid();
+        async function confirmBooking() {
+            if (selectedSlot) {
+                const weekKey = getWeekKey();
+
+                // Double-check slot availability on server
+                const { data: existing, error: selectError } = await client
+                    .from('bookings')
+                    .select('id')
+                    .eq('week_start', weekKey)
+                    .eq('day_index', selectedSlot.dayIndex)
+                    .eq('hour', selectedSlot.hour)
+                    .limit(1);
+
+                if (selectError) {
+                    alert('Erro ao verificar horário: ' + selectError.message);
+                    return;
+                }
+
+                if (existing && existing.length > 0) {
+                    alert('Este horário já foi reservado por outra pessoa.');
+                    await loadBookings();
+                    updateScheduleDisplay();
+                    closeBookingModal();
+                    return;
+                }
+
+                // Insert booking
+                const { error } = await client.from('bookings').insert([{
+                    member_id: currentUser.id,
+                    week_start: weekKey,
+                    day_index: selectedSlot.dayIndex,
+                    hour: selectedSlot.hour
+                }]);
+
+                if (error) {
+                    alert('Erro ao agendar: ' + error.message);
+                    return;
+                }
+
+                await loadBookings();
+                updateScheduleDisplay();
+                closeBookingModal();
+                alert('Agendamento realizado com sucesso!');
+            }
         }
 
-        function nextWeek() {
-            currentWeekOffset++;
-            updateCurrentWeekDisplay();
-            generateScheduleGrid();
+        function openCancelModal(dayIndex, hour) {
+            selectedSlot = { dayIndex, hour };
+            const days = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo'];
+            document.getElementById('cancelTime').textContent = hour;
+            document.getElementById('cancelDay').textContent = days[dayIndex];
+            document.getElementById('cancelModal').classList.remove('hidden');
         }
 
-        // Gestor dashboard functions
-        function loadGestorDashboard() {
-            updateGestorWeekDisplay();
-            generateGestorScheduleGrid();
+        function closeCancelModal() {
+            document.getElementById('cancelModal').classList.add('hidden');
+            selectedSlot = null;
         }
 
-        function updateGestorWeekDisplay() {
-            const dates = getWeekDates(gestorWeekOffset);
-            const weekRange = formatWeekRange(dates);
-            document.getElementById('currentWeekGestor').textContent = `Semana: ${weekRange}`;
+        async function confirmCancel() {
+            if (selectedSlot) {
+                const weekKey = getWeekKey();
+                // Delete only if owner (member) or if admin allow deleting any
+                let query = client
+                    .from('bookings')
+                    .delete()
+                    .eq('week_start', weekKey)
+                    .eq('day_index', selectedSlot.dayIndex)
+                    .eq('hour', selectedSlot.hour);
+
+                if (!isAdmin && currentUser) {
+                    query = query.eq('member_id', currentUser.id);
+                }
+
+                const { error } = await query;
+
+                if (error) {
+                    alert('Erro ao cancelar: ' + error.message);
+                    return;
+                }
+
+                await loadBookings();
+                updateScheduleDisplay();
+                closeCancelModal();
+                alert('Agendamento cancelado com sucesso!');
+            }
         }
 
-        function generateGestorScheduleGrid() {
-            const grid = document.getElementById('gestorScheduleGrid');
-            grid.innerHTML = '';
-            
-            timeSlots.forEach(time => {
-                // Time column
-                const timeCell = document.createElement('div');
-                timeCell.className = 'text-center py-2 font-medium text-gray-600 bg-gray-50 rounded';
-                timeCell.textContent = time;
-                grid.appendChild(timeCell);
-                
-                // Day columns
-                daysOfWeek.forEach(day => {
-                    const cell = document.createElement('div');
-                    const slotKey = getSlotKey(day, time, gestorWeekOffset);
-                    const isBlocked = blocks.includes(slotKey);
-                    const appointment = appointments.find(apt => apt.slotKey === slotKey);
-                    const isSelectedForBlock = selectedBlocks.includes(slotKey);
-                    
-                    cell.className = 'time-slot p-2 text-center text-xs rounded min-h-12 flex items-center justify-center';
-                    
-                    if (isSelectedForBlock) {
-                        cell.className += ' selected-for-block text-white cursor-pointer';
-                        cell.textContent = 'Selecionado';
-                        cell.onclick = () => toggleBlockSelection(slotKey);
-                    } else if (isBlocked) {
-                        cell.className += ' blocked-slot text-white';
-                        cell.textContent = 'Bloqueado';
-                        if (blockMode) {
-                            cell.onclick = () => toggleBlockSelection(slotKey);
-                        }
-                    } else if (appointment) {
-                        cell.className += ' bg-blue-500 text-white';
-                        cell.innerHTML = `<div><div class="font-semibold">${appointment.userName}</div><div class="text-xs">${appointment.userId}</div></div>`;
-                    } else {
-                        cell.className += ' bg-gray-100 border-2 border-dashed border-gray-300';
-                        cell.textContent = 'Disponível';
-                        if (blockMode) {
-                            cell.className += ' cursor-pointer hover:bg-orange-100';
-                            cell.onclick = () => toggleBlockSelection(slotKey);
-                        }
-                    }
-                    
-                    grid.appendChild(cell);
-                });
-            });
+        // Admin functions
+        async function previousWeek() {
+            currentWeekStart.setDate(currentWeekStart.getDate() - 7);
+            saveWeekState();
+            await loadBookings();
+            updateAdminScheduleDisplay();
         }
 
-        // Week navigation for gestor
-        function previousWeekGestor() {
-            gestorWeekOffset--;
-            updateGestorWeekDisplay();
-            generateGestorScheduleGrid();
+        async function nextWeek() {
+            currentWeekStart.setDate(currentWeekStart.getDate() + 7);
+            saveWeekState();
+            await loadBookings();
+            updateAdminScheduleDisplay();
         }
 
-        function currentWeekGestor() {
-            gestorWeekOffset = 0;
-            updateGestorWeekDisplay();
-            generateGestorScheduleGrid();
-        }
-
-        function nextWeekGestor() {
-            gestorWeekOffset++;
-            updateGestorWeekDisplay();
-            generateGestorScheduleGrid();
+        function setActiveWeek() {
+            const weekDisplay = formatWeekDisplay(currentWeekStart);
+            if (confirm(`Deseja definir a semana de ${weekDisplay} como a semana vigente para agendamentos dos sócios?`)) {
+                activeWeekStart = new Date(currentWeekStart);
+                saveWeekState();
+                alert('Semana vigente definida com sucesso! Os sócios agora podem agendar nesta semana.');
+            }
         }
 
         // Block management functions
         function toggleBlockMode() {
-            blockMode = !blockMode;
-            selectedBlocks = [];
-            
+            isBlockMode = !isBlockMode;
             const btn = document.getElementById('blockModeBtn');
-            const controls = document.getElementById('blockModeControls');
-            
-            if (blockMode) {
-                btn.textContent = 'Sair do Modo Bloqueio';
-                btn.className = 'bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition duration-200';
-                controls.classList.remove('hidden');
+            if (isBlockMode) {
+                btn.textContent = 'Modo Bloqueio: ON';
+                btn.className = 'bg-orange-700 hover:bg-orange-800 active:bg-orange-900 text-white px-4 py-3 rounded-lg transition duration-200 text-sm font-medium touch-manipulation';
             } else {
-                btn.textContent = 'Modo Bloqueio';
-                btn.className = 'bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition duration-200';
-                controls.classList.add('hidden');
+                btn.textContent = 'Modo Bloqueio: OFF';
+                btn.className = 'bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white px-4 py-3 rounded-lg transition duration-200 text-sm font-medium touch-manipulation';
             }
-            
-            generateGestorScheduleGrid();
+            updateAdminScheduleDisplay();
         }
 
-        function toggleBlockSelection(slotKey) {
-            if (!blockMode) return;
+        async function toggleBlockSlot(dayIndex, hour) {
+            const blockKey = `${dayIndex}-${hour}`;
+            const days = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo'];
             
-            const index = selectedBlocks.indexOf(slotKey);
-            if (index > -1) {
-                selectedBlocks.splice(index, 1);
+            if (blockedSlots[blockKey]) {
+                // Unblock
+                if (confirm(`Deseja desbloquear o horário ${hour} nas ${days[dayIndex]}s de todas as semanas futuras?`)) {
+                    await client.from('blocked_slots').delete().eq('id', blockedSlots[blockKey].id);
+                }
             } else {
-                selectedBlocks.push(slotKey);
+                // Block
+                if (confirm(`Deseja bloquear o horário ${hour} nas ${days[dayIndex]}s de todas as semanas futuras?\n\nEste bloqueio será aplicado automaticamente a todas as próximas semanas até ser cancelado.`)) {
+                    await client.from('blocked_slots').insert([{ day_index: dayIndex, hour }]);
+                }
             }
-            
-            generateGestorScheduleGrid();
+
+            await loadBlocks();
+            updateAdminScheduleDisplay();
+            updateBlocksList();
+            alert('Operação de bloqueio concluída.');
         }
 
-        function confirmBlocks() {
-            if (selectedBlocks.length === 0) {
-                alert('Nenhum horário selecionado para bloqueio');
+        function openBlockModal() {
+            updateBlocksList();
+            document.getElementById('blockModal').classList.remove('hidden');
+        }
+
+        function closeBlockModal() {
+            document.getElementById('blockModal').classList.add('hidden');
+        }
+
+        async function updateBlocksList() {
+            const blocksList = document.getElementById('activeBlocksList');
+            blocksList.innerHTML = '';
+
+            const blocks = Object.keys(blockedSlots);
+            if (blocks.length === 0) {
+                blocksList.innerHTML = '<p class="text-gray-500 text-center py-4">Nenhum bloqueio ativo</p>';
                 return;
             }
-            
-            selectedBlocks.forEach(slotKey => {
-                if (!blocks.includes(slotKey)) {
-                    blocks.push(slotKey);
-                }
+
+            blocks.forEach(blockKey => {
+                const block = blockedSlots[blockKey];
+                const blockDiv = document.createElement('div');
+                blockDiv.className = 'flex justify-between items-center p-3 bg-gray-100 rounded-lg';
+                blockDiv.innerHTML = `
+                    <div>
+                        <div class="font-semibold">${block.day_index === 0 ? 'Segunda' : block.day_index === 1 ? 'Terça' : block.day_index === 2 ? 'Quarta' : block.day_index === 3 ? 'Quinta' : block.day_index === 4 ? 'Sexta' : block.day_index === 5 ? 'Sábado' : 'Domingo'} - ${block.hour}</div>
+                        <div class="text-sm text-gray-600">Criado em: ${new Date(block.created_at).toLocaleDateString('pt-BR')}</div>
+                    </div>
+                    <button onclick="removeBlock('${blockKey}')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">
+                        Remover
+                    </button>
+                `;
+                blocksList.appendChild(blockDiv);
             });
-            
-            // Here you would save to Supabase
-            // await supabase.from('blocks').insert(selectedBlocks.map(key => ({ slotKey: key })));
-            
-            selectedBlocks = [];
-            toggleBlockMode();
-            alert(`${selectedBlocks.length} horários bloqueados com sucesso!`);
         }
 
-        function clearSelectedBlocks() {
-            selectedBlocks = [];
-            generateGestorScheduleGrid();
-        }
-
-        function showBlockManagement() {
-            const modal = document.getElementById('blockManagementModal');
-            const blockList = document.getElementById('blockList');
-            
-            if (blocks.length === 0) {
-                blockList.innerHTML = '<p class="text-gray-500 text-center py-4">Nenhum bloqueio cadastrado</p>';
-            } else {
-                blockList.innerHTML = blocks.map(slotKey => {
-                    const [date, time] = slotKey.split('_');
-                    const dateObj = new Date(date);
-                    const dayName = dayNames[dateObj.getDay() - 1] || 'Domingo';
-                    const dateStr = `${dateObj.getDate().toString().padStart(2, '0')}/${(dateObj.getMonth() + 1).toString().padStart(2, '0')}/${dateObj.getFullYear()}`;
-                    
-                    return `
-                        <div class="flex justify-between items-center p-3 bg-red-50 rounded-lg border border-red-200">
-                            <div>
-                                <p class="font-semibold text-red-800">${dayName}, ${dateStr} - ${time}</p>
-                            </div>
-                            <button onclick="removeBlock('${slotKey}')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition duration-200">
-                                Remover
-                            </button>
-                        </div>
-                    `;
-                }).join('');
+        async function removeBlock(blockKey) {
+            const block = blockedSlots[blockKey];
+            if (!block) return;
+            if (confirm(`Deseja remover o bloqueio de ${block.day_index === 0 ? 'Segunda' : block.day_index === 1 ? 'Terça' : block.day_index === 2 ? 'Quarta' : block.day_index === 3 ? 'Quinta' : block.day_index === 4 ? 'Sexta' : block.day_index === 5 ? 'Sábado' : 'Domingo'} às ${block.hour}?`)) {
+                await client.from('blocked_slots').delete().eq('id', block.id);
+                await loadBlocks();
+                updateBlocksList();
+                updateAdminScheduleDisplay();
+                alert('Bloqueio removido com sucesso!');
             }
-            
-            modal.classList.remove('hidden');
         }
 
-        function hideBlockManagement() {
-            document.getElementById('blockManagementModal').classList.add('hidden');
-        }
+        // -------------------------
+        // Data loading (from Supabase)
+        // -------------------------
+        async function loadBookings() {
+            // load bookings for currentWeekStart
+            if (!currentWeekStart) return;
+            const weekKey = getWeekKey();
 
-        function removeBlock(slotKey) {
-            blocks = blocks.filter(block => block !== slotKey);
-            
-            // Here you would delete from Supabase
-            // await supabase.from('blocks').delete().eq('slotKey', slotKey);
-            
-            showBlockManagement();
-            generateGestorScheduleGrid();
-        }
+            const { data, error } = await client
+                .from('bookings')
+                .select('id, member_id, week_start, day_index, hour, created_at, members(name, cpf)')
+                .eq('week_start', weekKey);
 
-        // CPF formatting
-        document.getElementById('socioCpf').addEventListener('input', function(e) {
-            let value = e.target.value.replace(/\D/g, '');
-            if (value.length <= 11) {
-                value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-                e.target.value = value;
+            bookings = {};
+            if (error) {
+                console.error('Erro ao carregar agendamentos:', error);
+                return;
             }
-        });
+            if (data) {
+                data.forEach(b => {
+                    const slotKey = `${b.week_start}-${b.day_index}-${b.hour}`;
+                    bookings[slotKey] = {
+                        id: b.id,
+                        member_id: b.member_id,
+                        userName: b.members ? b.members.name : '',
+                        userCPF: b.members ? b.members.cpf : ''
+                    };
+                });
+            }
+        }
 
-        // Initialize the application
-        document.addEventListener('DOMContentLoaded', function() {
-            // Sample data for demonstration
-            appointments = [
-                {
-                    slotKey: getSlotKey('monday', '10:00', 0),
-                    userId: '123.456.789-00',
-                    userName: 'João Silva',
-                    day: 'monday',
-                    time: '10:00',
-                    date: '25/11/2024'
-                }
-            ];
+        async function loadBlocks() {
+            const { data, error } = await client
+                .from('blocked_slots')
+                .select('*');
+
+            blockedSlots = {};
+            if (error) {
+                console.error('Erro ao carregar bloqueios:', error);
+                return;
+            }
+            if (data) {
+                data.forEach(b => {
+                    blockedSlots[`${b.day_index}-${b.hour}`] = b;
+                });
+            }
+        }
+
+        // Utility functions
+        function getWeekKey() {
+            // returns YYYY-MM-DD of currentWeekStart
+            return currentWeekStart.toISOString().split('T')[0];
+        }
+
+        function formatWeekDisplay(weekStart) {
+            const weekEnd = new Date(weekStart);
+            weekEnd.setDate(weekStart.getDate() + 6);
             
-            blocks = [
-                getSlotKey('sunday', '08:00', 0),
-                getSlotKey('sunday', '21:00', 0)
-            ];
-        });
+            const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
+            return `${weekStart.toLocaleDateString('pt-BR', options)} a ${weekEnd.toLocaleDateString('pt-BR', options)}`;
+        }
+
+        // Initialize system on load
+        initSystem();
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9810a70f02004468',t:'MTc1ODE5NjUwOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+
+    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9801d84d77b0c134',t:'MTc1ODA0MTIzOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+</body>
 </html>
