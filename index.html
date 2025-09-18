@@ -27,7 +27,9 @@
                 <button onclick="showMemberLogin()" class="w-full bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-semibold py-4 px-6 rounded-lg transition duration-200 text-base sm:text-lg">
                     Acesso do Sócio
                 </button>
-                <button onclick="showAdminLogin()" class="btn bg-blue-600 text-white">Painel Administrativo</button>
+                <button onclick="showAdminLogin()" class="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold py-4 px-6 rounded-lg transition duration-200 text-base sm:text-lg">
+                    Painel Administrativo
+                </button>
             </div>
         </div>
     </div>
@@ -317,17 +319,6 @@
 
         // Initialize system
         async function initSystem() {
-  // --- read active_week_start from app_config (Supabase) ---
-  try {
-    const { data: cfg, error } = await client.from('app_config').select('value').eq('key','active_week_start').maybeSingle();
-    if (!error && cfg && cfg.value) {
-      const parsed = new Date(cfg.value);
-      if (!isNaN(parsed)) activeWeekStart = parsed;
-    }
-  } catch (e) {
-    console.warn('app_config read failed', e);
-  }
-
             // Set current week to this Monday
             const today = new Date();
             const dayOfWeek = today.getDay();
@@ -844,38 +835,9 @@
             updateAdminScheduleDisplay();
         }
 
-        async function setActiveWeek() {
-  const weekDisplay = formatWeekDisplay(currentWeekStart);
-  if (!confirm(`Deseja definir a semana de ${weekDisplay} como vigente?`)) return;
-  activeWeekStart = new Date(currentWeekStart);
-  localStorage.setItem('activeWeekStart', activeWeekStart.toISOString());
-  try {
-    const iso = activeWeekStart.toISOString().split('T')[0];
-    const { error } = await client.from('app_config').upsert([{ key: 'active_week_start', value: iso }], { onConflict: 'key' });
-    if (error) {
-      console.error('Supabase error:', error);
-      alert('Erro ao salvar no Supabase: ' + (error.message || JSON.stringify(error)));
-    } else {
-      alert('Semana vigente definida e gravada no banco.');
-    }
-  } catch (e) {
-    console.error('Exception on setActiveWeek', e);
-    alert('Exceção ao salvar: ' + e.message);
-  }
-  try { await loadBookings(); await loadBlocks(); } catch(e){}
-  if (typeof renderAdminWeek === 'function') renderAdminWeek();
-} como vigente?`)) return;
-  activeWeekStart = new Date(currentWeekStart);
-  localStorage.setItem('activeWeekStart', activeWeekStart.toISOString());
-  try {
-    const iso = activeWeekStart.toISOString().split('T')[0];
-    const { error } = await client.from('app_config').upsert([{ key: 'active_week_start', value: iso }], { onConflict: 'key' });
-    if (error) throw error;
-    alert('Semana vigente definida e gravada no banco.');
-  } catch (e) { console.warn('Failed to save active_week_start', e); alert('Semana definida localmente.'); }
-  try { await loadBookings(); await loadBlocks(); } catch(e){}
-  if (typeof renderAdminWeek === 'function') renderAdminWeek();
-} como a semana vigente para agendamentos dos sócios?`)) {
+        function setActiveWeek() {
+            const weekDisplay = formatWeekDisplay(currentWeekStart);
+            if (confirm(`Deseja definir a semana de ${weekDisplay} como a semana vigente para agendamentos dos sócios?`)) {
                 activeWeekStart = new Date(currentWeekStart);
                 saveWeekState();
                 alert('Semana vigente definida com sucesso! Os sócios agora podem agendar nesta semana.');
