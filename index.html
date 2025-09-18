@@ -1013,35 +1013,41 @@ window.backToLogin = function() {
 };
 </script>
 
-<!-- Hook extra para gravar semana vigente no Supabase -->
+
+<!-- Hook extra para gravar semana vigente no Supabase (delete + insert) -->
 <script>
 (function() {
   const oldSetActiveWeek = window.setActiveWeek;
   window.setActiveWeek = async function() {
-    // mantém comportamento original
     if (oldSetActiveWeek) oldSetActiveWeek();
 
-    // grava também no Supabase
     try {
       if (typeof activeWeekStart !== "undefined") {
         const iso = activeWeekStart.toISOString().split('T')[0];
-        const { error } = await client.from('app_config').upsert(
-          [{ key: 'active_week_start', value: iso }],
-          { onConflict: 'key' }
-        );
+
+        // Apaga valor anterior
+        await client.from('app_config').delete().eq('key', 'active_week_start');
+
+        // Insere novo
+        const { error } = await client.from('app_config').insert([
+          { key: 'active_week_start', value: iso }
+        ]);
+
         if (error) {
-          console.error('Erro ao salvar semana vigente no Supabase:', error);
-          alert('Erro ao salvar semana vigente no Supabase: ' + error.message);
+          console.error('Erro Supabase:', error);
+          alert('Erro ao salvar semana vigente: ' + error.message);
         } else {
-          console.log('Semana vigente salva no Supabase com sucesso.');
+          alert('Semana vigente salva no Supabase com sucesso!');
         }
       }
     } catch (e) {
       console.error('Exceção ao salvar semana vigente:', e);
+      alert('Falha ao salvar semana vigente: ' + e.message);
     }
   };
 })();
 </script>
+
 
 </body>
 </html>
