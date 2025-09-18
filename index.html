@@ -1050,6 +1050,7 @@ window.backToLogin = function() {
 
 
 
+
 <script>
 if (typeof window.loginMember !== "function") {
   window.loginMember = async function() {
@@ -1059,8 +1060,26 @@ if (typeof window.loginMember !== "function") {
         alert("Informe o CPF");
         return;
       }
-      console.log("Login de sócio com CPF:", cpf);
-      // TODO: lógica existente para validar sócio e carregar interface
+
+      const { data, error } = await client
+        .from('socios')
+        .select('*')
+        .eq('cpf', cpf)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) {
+        alert("Sócio não encontrado!");
+        return;
+      }
+
+      console.log("Login sócio:", data);
+      alert("Bem-vindo, " + data.nome + "!");
+      // abre painel do sócio
+      try {
+        document.getElementById('memberLogin').classList.add('hidden');
+        document.getElementById('memberPanel').classList.remove('hidden');
+      } catch(e){}
     } catch (e) {
       console.error("Erro loginMember:", e);
       alert("Erro ao tentar login de sócio");
@@ -1077,8 +1096,27 @@ if (typeof window.loginAdmin !== "function") {
         alert("Informe usuário e senha");
         return;
       }
-      console.log("Login admin:", user);
-      // TODO: lógica existente para validar admin e abrir painel
+
+      const { data, error } = await client
+        .from('admins')
+        .select('*')
+        .eq('usuario', user)
+        .eq('senha', pass)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) {
+        alert("Usuário ou senha inválidos!");
+        return;
+      }
+
+      console.log("Login admin:", data);
+      alert("Bem-vindo, administrador " + data.usuario + "!");
+      // abre painel admin
+      try {
+        document.getElementById('adminLogin').classList.add('hidden');
+        document.getElementById('adminPanel').classList.remove('hidden');
+      } catch(e){}
     } catch (e) {
       console.error("Erro loginAdmin:", e);
       alert("Erro ao tentar login do administrador");
@@ -1086,6 +1124,7 @@ if (typeof window.loginAdmin !== "function") {
   };
 }
 </script>
+
 
 </body>
 </html>
