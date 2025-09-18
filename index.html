@@ -996,26 +996,29 @@
 
     <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9801d84d77b0c134',t:'MTc1ODA0MTIzOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 
-<!-- Funções globais de login -->
+<!-- Patch Supabase: leitura e gravação da semana vigente -->
 <script>
-window.showMemberLogin = function() {
-  document.getElementById('loginScreen').classList.add('hidden');
-  document.getElementById('memberLogin').classList.remove('hidden');
-};
-window.showAdminLogin = function() {
-  document.getElementById('loginScreen').classList.add('hidden');
-  document.getElementById('adminLogin').classList.remove('hidden');
-};
-window.backToLogin = function() {
-  document.getElementById('memberLogin').classList.add('hidden');
-  document.getElementById('adminLogin').classList.add('hidden');
-  document.getElementById('loginScreen').classList.remove('hidden');
-};
-</script>
+// --- Leitura da semana vigente ao carregar ---
+(async function(){
+  try {
+    const { data: cfg, error } = await client
+      .from('app_config')
+      .select('value')
+      .eq('key', 'active_week_start')
+      .maybeSingle();
+    if (!error && cfg && cfg.value) {
+      const parsed = new Date(cfg.value);
+      if (!isNaN(parsed)) {
+        window.activeWeekStart = parsed;
+        console.log("Semana vigente carregada do Supabase:", cfg.value);
+      }
+    }
+  } catch(e) {
+    console.warn("Erro ao carregar semana vigente:", e);
+  }
+})();
 
-
-<!-- Hook extra para gravar semana vigente no Supabase (delete + insert) -->
-<script>
+// --- Hook para sobrescrever setActiveWeek e gravar no Supabase ---
 (function() {
   const oldSetActiveWeek = window.setActiveWeek;
   window.setActiveWeek = async function() {
@@ -1035,7 +1038,7 @@ window.backToLogin = function() {
 
         if (error) {
           console.error('Erro Supabase:', error);
-          alert('Erro ao salvar semana vigente: ' + error.message);
+          alert('Erro ao salvar semana vigente no Supabase: ' + error.message);
         } else {
           alert('Semana vigente salva no Supabase com sucesso!');
         }
@@ -1047,84 +1050,6 @@ window.backToLogin = function() {
   };
 })();
 </script>
-
-
-
-
-<script>
-if (typeof window.loginMember !== "function") {
-  window.loginMember = async function() {
-    try {
-      const cpf = document.getElementById('memberCpf').value.trim();
-      if (!cpf) {
-        alert("Informe o CPF");
-        return;
-      }
-
-      const { data, error } = await client
-        .from('socios')
-        .select('*')
-        .eq('cpf', cpf)
-        .maybeSingle();
-
-      if (error) throw error;
-      if (!data) {
-        alert("Sócio não encontrado!");
-        return;
-      }
-
-      console.log("Login sócio:", data);
-      alert("Bem-vindo, " + data.nome + "!");
-      // abre painel do sócio
-      try {
-        document.getElementById('memberLogin').classList.add('hidden');
-        document.getElementById('memberPanel').classList.remove('hidden');
-      } catch(e){}
-    } catch (e) {
-      console.error("Erro loginMember:", e);
-      alert("Erro ao tentar login de sócio");
-    }
-  };
-}
-
-if (typeof window.loginAdmin !== "function") {
-  window.loginAdmin = async function() {
-    try {
-      const user = document.getElementById('adminUser').value.trim();
-      const pass = document.getElementById('adminPass').value.trim();
-      if (!user || !pass) {
-        alert("Informe usuário e senha");
-        return;
-      }
-
-      const { data, error } = await client
-        .from('admins')
-        .select('*')
-        .eq('usuario', user)
-        .eq('senha', pass)
-        .maybeSingle();
-
-      if (error) throw error;
-      if (!data) {
-        alert("Usuário ou senha inválidos!");
-        return;
-      }
-
-      console.log("Login admin:", data);
-      alert("Bem-vindo, administrador " + data.usuario + "!");
-      // abre painel admin
-      try {
-        document.getElementById('adminLogin').classList.add('hidden');
-        document.getElementById('adminPanel').classList.remove('hidden');
-      } catch(e){}
-    } catch (e) {
-      console.error("Erro loginAdmin:", e);
-      alert("Erro ao tentar login do administrador");
-    }
-  };
-}
-</script>
-
 
 </body>
 </html>
