@@ -1049,5 +1049,43 @@ window.backToLogin = function() {
 </script>
 
 
+
+<script>
+if (typeof window.loginMember !== "function") {
+  window.loginMember = async function() {
+    try {
+      const cpf = document.getElementById('memberCpf').value.trim();
+      if (!cpf) {
+        alert("Informe o CPF");
+        return;
+      }
+      console.log("Login de sócio com CPF:", cpf);
+      // TODO: lógica existente para validar sócio e carregar interface
+    } catch (e) {
+      console.error("Erro loginMember:", e);
+      alert("Erro ao tentar login de sócio");
+    }
+  };
+}
+
+if (typeof window.loginAdmin !== "function") {
+  window.loginAdmin = async function() {
+    try {
+      const user = document.getElementById('adminUser').value.trim();
+      const pass = document.getElementById('adminPass').value.trim();
+      if (!user || !pass) {
+        alert("Informe usuário e senha");
+        return;
+      }
+      console.log("Login admin:", user);
+      // TODO: lógica existente para validar admin e abrir painel
+    } catch (e) {
+      console.error("Erro loginAdmin:", e);
+      alert("Erro ao tentar login do administrador");
+    }
+  };
+}
+</script>
+
 </body>
 </html>
