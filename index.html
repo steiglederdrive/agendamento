@@ -406,12 +406,15 @@
                 const remoteActive = await getActiveWeekFromSupabase();
                 if (remoteActive) {
                     activeWeekStart = remoteActive;
+                    currentWeekStart = new Date(activeWeekStart);
                 } else {
                     activeWeekStart = new Date(currentWeekStart);
+                    currentWeekStart = new Date(activeWeekStart);
                 }
             } catch(e) {
                 console.warn('Não foi possível buscar semana ativa no Supabase:', e);
                 activeWeekStart = new Date(currentWeekStart);
+                currentWeekStart = new Date(activeWeekStart);
             }
 
             // By default members view the active week
