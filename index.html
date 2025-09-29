@@ -402,23 +402,16 @@
                 if (!isNaN(parsed)) currentWeekStart = parsed;
             }
 
-            const savedActiveWeek = localStorage.getItem('activeWeekStart');
-            if (savedActiveWeek) {
-                const parsedA = new Date(savedActiveWeek);
-                if (!isNaN(parsedA)) activeWeekStart = parsedA;
-            } else {
-                activeWeekStart = new Date(currentWeekStart);
-            }
-
-            // Try to fetch active week from Supabase (overrides localStorage if present)
             try {
                 const remoteActive = await getActiveWeekFromSupabase();
                 if (remoteActive) {
                     activeWeekStart = remoteActive;
-                    localStorage.setItem('activeWeekStart', activeWeekStart.toISOString());
+                } else {
+                    activeWeekStart = new Date(currentWeekStart);
                 }
             } catch(e) {
                 console.warn('Não foi possível buscar semana ativa no Supabase:', e);
+                activeWeekStart = new Date(currentWeekStart);
             }
 
             // By default members view the active week
@@ -560,8 +553,16 @@ document.getElementById('adminLogin').classList.add('hidden');
                 }
                 currentUser = freshMember || member;
                 isAdmin = false;
-                // Members always see the active week
-                currentWeekStart = new Date(activeWeekStart);
+                // sempre buscar semana vigente do Supabase
+                try {
+                    const remoteActive = await getActiveWeekFromSupabase();
+                    if (remoteActive) {
+                        activeWeekStart = remoteActive;
+                        currentWeekStart = new Date(activeWeekStart);
+                    }
+                } catch(e) {
+                    console.warn('Não foi possível buscar semana ativa no Supabase no login do sócio:', e);
+                }
                 document.getElementById('currentMemberName').textContent = currentUser.name || name;
                 document.getElementById('memberLogin').classList.add('hidden');
                 document.getElementById('memberDashboard').classList.remove('hidden');
@@ -954,13 +955,9 @@ document.getElementById('adminLogin').classList.add('hidden');
             const weekDisplay = formatWeekDisplay(currentWeekStart);
             if (confirm(`Deseja definir a semana de ${weekDisplay} como a semana vigente para agendamentos dos sócios?`)) {
                 activeWeekStart = new Date(currentWeekStart);
-                // persist locally
-                saveWeekState();
                 // persist in Supabase
                 try {
                     await saveActiveWeekToSupabase(activeWeekStart.toISOString().split('T')[0]);
-                    // keep local in sync
-                    localStorage.setItem('activeWeekStart', activeWeekStart.toISOString());
                     alert('Semana vigente salva no Supabase com sucesso! Os sócios agora podem agendar nesta semana.');
                 } catch(e) {
                     console.error('Erro ao salvar semana vigente no Supabase:', e);
