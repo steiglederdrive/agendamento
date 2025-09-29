@@ -4,6 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Sport Itapuí - Agendamento de Tênis</title>
+  <link rel="icon" type="image/png" href="https://i.postimg.cc/9FG4YkXP/logo.jpg">
+  <link rel="apple-touch-icon" href="https://i.postimg.cc/9FG4YkXP/logo.jpg">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
@@ -319,6 +321,27 @@
 
         // Initialize system
         async function initSystem() {
+    // --- restore persisted login (added) ---
+    try {
+      const _savedUser = localStorage.getItem('currentUser');
+      const _savedIsAdmin = localStorage.getItem('isAdmin');
+      if (_savedUser) {
+        currentUser = JSON.parse(_savedUser);
+        isAdmin = _savedIsAdmin === 'true';
+        // hide login screen and show relevant dashboard early
+        try { document.getElementById('loginScreen')?.classList.add('hidden'); } catch(e){}
+        if (isAdmin) {
+          try { document.getElementById('adminDashboard')?.classList.remove('hidden'); } catch(e){}
+        } else {
+          try { document.getElementById('memberDashboard')?.classList.remove('hidden'); } catch(e){}
+          try { if (document.getElementById('currentMemberName')) document.getElementById('currentMemberName').textContent = currentUser.name || ''; } catch(e){}
+        }
+      }
+    } catch(e) {
+      console.warn('session restore failed', e);
+    }
+    // --- end session restore ---
+
             // Set current week to this Monday
             const today = new Date();
             const dayOfWeek = today.getDay();
@@ -359,8 +382,14 @@
         // Screen navigation
         function showLoginScreen() {
             document.getElementById('loginScreen').classList.remove('hidden');
-            document.getElementById('memberLogin').classList.add('hidden');
-            document.getElementById('adminLogin').classList.add('hidden');
+            
+    // persist member login
+    try { localStorage.setItem('currentUser', JSON.stringify(currentUser)); localStorage.setItem('isAdmin', 'false'); } catch(e){}
+document.getElementById('memberLogin').classList.add('hidden');
+            
+    // persist admin login
+    try { localStorage.setItem('currentUser', JSON.stringify(currentUser)); localStorage.setItem('isAdmin', 'true'); } catch(e){}
+document.getElementById('adminLogin').classList.add('hidden');
             document.getElementById('memberDashboard').classList.add('hidden');
             document.getElementById('adminDashboard').classList.add('hidden');
         }
@@ -497,6 +526,9 @@
         }
 
         function logout() {
+    // clear persisted session
+    try { localStorage.removeItem('currentUser'); localStorage.removeItem('isAdmin'); } catch(e) {}
+
             currentUser = null;
             isAdmin = false;
             document.getElementById('memberName').value = '';
@@ -992,98 +1024,10 @@
 
         // Initialize system on load
         initSystem();
+
+window.addEventListener('load', initSystem);
     </script>
 
     <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9801d84d77b0c134',t:'MTc1ODA0MTIzOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
-
-<!-- Patch Supabase: leitura e gravação da semana vigente -->
-<script>
-// --- Leitura da semana vigente ao carregar ---
-(async function(){
-  try {
-    const { data: cfg, error } = await client
-      .from('app_config')
-      .select('value')
-      .eq('key', 'active_week_start')
-      .maybeSingle();
-    if (!error && cfg && cfg.value) {
-      const parsed = new Date(cfg.value);
-      if (!isNaN(parsed)) {
-        window.activeWeekStart = parsed;
-        console.log("Semana vigente carregada do Supabase:", cfg.value);
-      }
-    }
-  } catch(e) {
-    console.warn("Erro ao carregar semana vigente:", e);
-  }
-})();
-
-// --- Hook para sobrescrever setActiveWeek e gravar no Supabase ---
-(function() {
-  const oldSetActiveWeek = window.setActiveWeek;
-  window.setActiveWeek = async function() {
-    if (oldSetActiveWeek) oldSetActiveWeek();
-
-    try {
-      if (typeof activeWeekStart !== "undefined") {
-        const iso = activeWeekStart.toISOString().split('T')[0];
-
-        // Apaga valor anterior
-        await client.from('app_config').delete().eq('key', 'active_week_start');
-
-        // Insere novo
-        const { error } = await client.from('app_config').insert([
-          { key: 'active_week_start', value: iso }
-        ]);
-
-        if (error) {
-          console.error('Erro Supabase:', error);
-          alert('Erro ao salvar semana vigente no Supabase: ' + error.message);
-        } else {
-          alert('Semana vigente salva no Supabase com sucesso!');
-        }
-      }
-    } catch (e) {
-      console.error('Exceção ao salvar semana vigente:', e);
-      alert('Falha ao salvar semana vigente: ' + e.message);
-    }
-  };
-})();
-</script>
-
-
-<!-- Patch Supabase: leitura sincronizada da semana vigente -->
-<script>
-(async function(){
-  try {
-    const { data: cfg, error } = await client
-      .from('app_config')
-      .select('value')
-      .eq('key', 'active_week_start')
-      .maybeSingle();
-
-    if (!error && cfg && cfg.value) {
-      const parsed = new Date(cfg.value);
-      if (!isNaN(parsed)) {
-        window.activeWeekStart = parsed;
-        console.log("Semana vigente carregada do Supabase:", cfg.value);
-
-        // sincronizar no localStorage
-        try {
-          localStorage.setItem('activeWeekStart', parsed.toISOString());
-        } catch(e){}
-
-        // atualizar interface
-        try { if (typeof renderAdminWeek === "function") renderAdminWeek(); } catch(e){}
-        try { if (typeof renderMemberWeek === "function") renderMemberWeek(); } catch(e){}
-      }
-    }
-  } catch(e) {
-    console.warn("Erro ao carregar semana vigente do Supabase:", e);
-  }
-})();
-</script>
-
 </body>
 </html>
-
