@@ -310,6 +310,16 @@
 
         // Helper: settings storage in Supabase
         
+        function forceMonday(date) {
+            const d = new Date(date);
+            const day = d.getDay();
+            const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+            d.setDate(diff);
+            d.setHours(0, 0, 0, 0);
+            return d;
+        }
+
+        
         async function getActiveWeekFromSupabase() {
             try {
                 const { data, error } = await client
@@ -325,13 +335,7 @@
                     const localMidnight = new Date(data.value + 'T00:00:00');
                     localMidnight.setHours(0, 0, 0, 0);
                     if (!isNaN(localMidnight)) {
-                        // Ajustar sempre para a segunda-feira da semana
-                        const d = new Date(localMidnight);
-                        const day = d.getDay();
-                        const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-                        d.setDate(diff);
-                        d.setHours(0, 0, 0, 0);
-                        return d;
+                        return forceMonday(localMidnight);
                     }
                 }
                 return null;
@@ -409,7 +413,7 @@
     // --- end session restore ---
 
             // Set current week to this Monday
-            const today = new Date();
+            const today = forceMonday(new Date());
             const dayOfWeek = today.getDay();
             const daysToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
             currentWeekStart = new Date(today);
