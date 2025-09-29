@@ -995,5 +995,95 @@
     </script>
 
     <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9801d84d77b0c134',t:'MTc1ODA0MTIzOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+
+<!-- Patch Supabase: leitura e gravação da semana vigente -->
+<script>
+// --- Leitura da semana vigente ao carregar ---
+(async function(){
+  try {
+    const { data: cfg, error } = await client
+      .from('app_config')
+      .select('value')
+      .eq('key', 'active_week_start')
+      .maybeSingle();
+    if (!error && cfg && cfg.value) {
+      const parsed = new Date(cfg.value);
+      if (!isNaN(parsed)) {
+        window.activeWeekStart = parsed;
+        console.log("Semana vigente carregada do Supabase:", cfg.value);
+      }
+    }
+  } catch(e) {
+    console.warn("Erro ao carregar semana vigente:", e);
+  }
+})();
+
+// --- Hook para sobrescrever setActiveWeek e gravar no Supabase ---
+(function() {
+  const oldSetActiveWeek = window.setActiveWeek;
+  window.setActiveWeek = async function() {
+    if (oldSetActiveWeek) oldSetActiveWeek();
+
+    try {
+      if (typeof activeWeekStart !== "undefined") {
+        const iso = activeWeekStart.toISOString().split('T')[0];
+
+        // Apaga valor anterior
+        await client.from('app_config').delete().eq('key', 'active_week_start');
+
+        // Insere novo
+        const { error } = await client.from('app_config').insert([
+          { key: 'active_week_start', value: iso }
+        ]);
+
+        if (error) {
+          console.error('Erro Supabase:', error);
+          alert('Erro ao salvar semana vigente no Supabase: ' + error.message);
+        } else {
+          alert('Semana vigente salva no Supabase com sucesso!');
+        }
+      }
+    } catch (e) {
+      console.error('Exceção ao salvar semana vigente:', e);
+      alert('Falha ao salvar semana vigente: ' + e.message);
+    }
+  };
+})();
+</script>
+
+
+<!-- Patch Supabase: leitura sincronizada da semana vigente -->
+<script>
+(async function(){
+  try {
+    const { data: cfg, error } = await client
+      .from('app_config')
+      .select('value')
+      .eq('key', 'active_week_start')
+      .maybeSingle();
+
+    if (!error && cfg && cfg.value) {
+      const parsed = new Date(cfg.value);
+      if (!isNaN(parsed)) {
+        window.activeWeekStart = parsed;
+        console.log("Semana vigente carregada do Supabase:", cfg.value);
+
+        // sincronizar no localStorage
+        try {
+          localStorage.setItem('activeWeekStart', parsed.toISOString());
+        } catch(e){}
+
+        // atualizar interface
+        try { if (typeof renderAdminWeek === "function") renderAdminWeek(); } catch(e){}
+        try { if (typeof renderMemberWeek === "function") renderMemberWeek(); } catch(e){}
+      }
+    }
+  } catch(e) {
+    console.warn("Erro ao carregar semana vigente do Supabase:", e);
+  }
+})();
+</script>
+
 </body>
 </html>
+
