@@ -321,8 +321,12 @@
                     return null;
                 }
                 if (data && data.value) {
-                    const parsed = new Date(data.value);
-                    if (!isNaN(parsed)) return parsed;
+                    // Supabase often stores dates as 'YYYY-MM-DD'. Construct a Date at local midnight
+                    // to avoid timezone shifts that can move the date to the previous day (e.g. Sunday).
+                    // We append 'T00:00:00' so the Date constructor interprets it as local midnight.
+                    const localMidnight = new Date(data.value + 'T00:00:00');
+                    localMidnight.setHours(0, 0, 0, 0);
+                    if (!isNaN(localMidnight)) return localMidnight;
                 }
                 return null;
             } catch (e) {
