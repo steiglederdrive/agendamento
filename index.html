@@ -318,19 +318,52 @@
         let selectedAdminDay = 0; // Currently selected day for admin view
 
         // Initialize system
+        async function loadActiveWeekFromServer() {
+            try {
+                const { data, error } = await client
+                    .from('app_settings')
+                    .select('value')
+                    .eq('key', 'active_week_start')
+                    .maybeSingle();
+                if (error) {
+                    console.error('Erro ao carregar semana vigente do servidor:', error);
+                }
+                if (data && data.value) {
+                    activeWeekStart = new Date(data.value);
+                } else {
+                    // inicializa no servidor com a semana atual se não existir
+                    activeWeekStart = new Date(currentWeekStart);
+                    const weekKey = activeWeekStart.toISOString().split('T')[0];
+                    try {
+                        const { error: upsertError } = await client.from('app_settings').upsert([{ key: 'active_week_start', value: weekKey }]);
+                        if (upsertError) console.error('Erro ao inicializar semana vigente no servidor:', upsertError);
+                    } catch (e) {
+                        console.error('Falha ao inicializar semana vigente no servidor:', e);
+                    }
+                }
+                localStorage.setItem('activeWeekStart', activeWeekStart.toISOString());
+            } catch (err) {
+                console.error('Falha ao carregar semana vigente do servidor:', err);
+                // fallback para localStorage
+                const savedActiveWeek = localStorage.getItem('activeWeekStart');
+                if (savedActiveWeek) {
+                    const parsed = new Date(savedActiveWeek);
+                    if (!isNaN(parsed)) activeWeekStart = parsed;
+                    else activeWeekStart = new Date(currentWeekStart);
+                } else {
+                    activeWeekStart = new Date(currentWeekStart);
+                }
+            }
+        }
+
         async function initSystem() {
-            
-// Sempre fixar a semana começando na segunda-feira
-const today = new Date();
-const dayOfWeek = today.getDay(); // 0 = domingo, 1 = segunda, ..., 6 = sábado
-
-// Domingo pertence à semana anterior, nunca inicia uma nova semana
-const daysToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-
-currentWeekStart = new Date(today);
-currentWeekStart.setDate(today.getDate() + daysToMonday);
-currentWeekStart.setHours(0, 0, 0, 0);
-
+            // Set current week to this Monday
+            const today = new Date();
+            const dayOfWeek = today.getDay();
+            const daysToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+            currentWeekStart = new Date(today);
+            currentWeekStart.setDate(today.getDate() + daysToMonday);
+            currentWeekStart.setHours(0, 0, 0, 0);
 
             // restore week state from localStorage (keeps admin navigation between reloads)
             const savedWeek = localStorage.getItem('currentWeekStart');
@@ -339,15 +372,22 @@ currentWeekStart.setHours(0, 0, 0, 0);
                 if (!isNaN(parsed)) currentWeekStart = parsed;
             }
 
-            const savedActiveWeek = localStorage.getItem('activeWeekStart');
-            if (savedActiveWeek) {
-                const parsedA = new Date(savedActiveWeek);
-                if (!isNaN(parsedA)) activeWeekStart = parsedA;
-            } else {
+            // Load active week from server (shared between devices)
+            await loadActiveWeekFromServer();
+
+            // If admin hasn't saved a specific week locally, default members to the active week from server
+            if (!savedWeek && activeWeekStart) {
+                currentWeekStart = new Date(activeWeekStart);
+            }
+
+            // Ensure activeWeekStart is defined
+            if (!activeWeekStart) {
                 activeWeekStart = new Date(currentWeekStart);
             }
 
-            // By default members view the active week
+            // Persist locally as well
+            saveWeekState();
+
             // bookings and blocks are loaded for currentWeekStart
             await loadBlocks();
             await loadBookings();
@@ -840,13 +880,27 @@ currentWeekStart.setHours(0, 0, 0, 0);
             updateAdminScheduleDisplay();
         }
 
-        function setActiveWeek() {
+        async function setActiveWeek() {
             const weekDisplay = formatWeekDisplay(currentWeekStart);
             if (confirm(`Deseja definir a semana de ${weekDisplay} como a semana vigente para agendamentos dos sócios?`)) {
                 activeWeekStart = new Date(currentWeekStart);
                 saveWeekState();
-                alert('Semana vigente definida com sucesso! Os sócios agora podem agendar nesta semana.');
+                // Salvar semana vigente no Supabase para sincronizar entre dispositivos
+                try {
+                    const weekKey = activeWeekStart.toISOString().split('T')[0];
+                    const { error } = await client.from('app_settings').upsert([{ key: 'active_week_start', value: weekKey }]);
+                    if (error) throw error;
+                    alert('Semana vigente definida com sucesso! Os sócios agora podem agendar nesta semana.');
+                    // Recarrega agendamentos para refletir a nova semana imediatamente
+                    await loadBookings();
+                    updateScheduleDisplay();
+                    updateAdminScheduleDisplay();
+                } catch (err) {
+                    console.error('Erro ao salvar semana vigente no servidor:', err);
+                    alert('Erro ao salvar semana vigente no servidor: ' + (err.message || err));
+                }
             }
+        }
         }
 
         // Block management functions
