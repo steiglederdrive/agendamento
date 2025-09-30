@@ -401,6 +401,7 @@
             if (activeWeekStart) localStorage.setItem('activeWeekStart', activeWeekStart.toISOString());
         }
 
+        
         // Screen navigation
         function showLoginScreen() {
             document.getElementById('loginScreen').classList.remove('hidden');
@@ -413,12 +414,19 @@
         function showMemberLogin() {
             document.getElementById('loginScreen').classList.add('hidden');
             document.getElementById('memberLogin').classList.remove('hidden');
+            document.getElementById('adminLogin').classList.add('hidden');
+            document.getElementById('memberDashboard').classList.add('hidden');
+            document.getElementById('adminDashboard').classList.add('hidden');
         }
 
         function showAdminLogin() {
             document.getElementById('loginScreen').classList.add('hidden');
             document.getElementById('adminLogin').classList.remove('hidden');
+            document.getElementById('memberLogin').classList.add('hidden');
+            document.getElementById('memberDashboard').classList.add('hidden');
+            document.getElementById('adminDashboard').classList.add('hidden');
         }
+
 
         // CPF validation functions
         function formatCPF(input) {
