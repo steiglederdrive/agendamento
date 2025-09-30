@@ -402,30 +402,31 @@
         }
 
         
-        // Screen navigation
-        function showLoginScreen() {
-            document.getElementById('loginScreen').classList.remove('hidden');
-            document.getElementById('memberLogin').classList.add('hidden');
-            document.getElementById('adminLogin').classList.add('hidden');
-            document.getElementById('memberDashboard').classList.add('hidden');
-            document.getElementById('adminDashboard').classList.add('hidden');
-        }
+        // Screen navigation (garantido no escopo global)
+window.showLoginScreen = function() {
+    document.getElementById('loginScreen').classList.remove('hidden');
+    document.getElementById('memberLogin').classList.add('hidden');
+    document.getElementById('adminLogin').classList.add('hidden');
+    document.getElementById('memberDashboard').classList.add('hidden');
+    document.getElementById('adminDashboard').classList.add('hidden');
+}
 
-        function showMemberLogin() {
-            document.getElementById('loginScreen').classList.add('hidden');
-            document.getElementById('memberLogin').classList.remove('hidden');
-            document.getElementById('adminLogin').classList.add('hidden');
-            document.getElementById('memberDashboard').classList.add('hidden');
-            document.getElementById('adminDashboard').classList.add('hidden');
-        }
+window.showMemberLogin = function() {
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('memberLogin').classList.remove('hidden');
+    document.getElementById('adminLogin').classList.add('hidden');
+    document.getElementById('memberDashboard').classList.add('hidden');
+    document.getElementById('adminDashboard').classList.add('hidden');
+}
 
-        function showAdminLogin() {
-            document.getElementById('loginScreen').classList.add('hidden');
-            document.getElementById('adminLogin').classList.remove('hidden');
-            document.getElementById('memberLogin').classList.add('hidden');
-            document.getElementById('memberDashboard').classList.add('hidden');
-            document.getElementById('adminDashboard').classList.add('hidden');
-        }
+window.showAdminLogin = function() {
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('adminLogin').classList.remove('hidden');
+    document.getElementById('memberLogin').classList.add('hidden');
+    document.getElementById('memberDashboard').classList.add('hidden');
+    document.getElementById('adminDashboard').classList.add('hidden');
+}
+
 
 
         // CPF validation functions
@@ -1064,3 +1065,4 @@
     <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9801d84d77b0c134',t:'MTc1ODA0MTIzOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 </html>
+
