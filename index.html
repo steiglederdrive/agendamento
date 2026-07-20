@@ -4,7 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Jantar Baile de 100 Anos - Clube Itapúa</title>
+  
+  <!-- LIB DO SUPABASE -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
   <style>
     :root {
       --bg-dark: #0f172a;
@@ -100,7 +103,7 @@
     .dot.free { background-color: var(--green-free); box-shadow: 0 0 8px rgba(34, 197, 94, 0.5); }
     .dot.busy { background-color: var(--red-busy); box-shadow: 0 0 8px rgba(239, 68, 68, 0.5); }
 
-    /* LAYOUT FIDEDIGNO AO PROTOCOLO/IMAGEM */
+    /* LAYOUT PLANTA DO EVENTO */
     .floor-layout {
       position: relative;
       width: 900px;
@@ -379,7 +382,25 @@
   </div>
 
   <script>
-    /* Position Map para as 38 Mesas baseadas no layout */
+    /* =============================================================
+       1. CONFIGURAÇÃO DO SUPABASE (Substitua pelas suas chaves)
+       ============================================================= */
+    const SUPABASE_URL = "https://SEU-PROJETO.supabase.co"; 
+    const SUPABASE_KEY = "SUA-CHAVE-ANON-AQUI";             
+
+    // Inicializa o Supabase de forma segura
+    let _supabase = null;
+    if (typeof supabase !== 'undefined' && SUPABASE_URL.includes("supabase.co")) {
+      try {
+        _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      } catch(e) {
+        console.warn("Supabase ainda não configurado corretamente.");
+      }
+    }
+
+    /* =============================================================
+       2. POSICIONAMENTO DAS MESAS
+       ============================================================= */
     const tablePositions = {
       1: {x: 30, y: 70},   2: {x: 30, y: 140},  3: {x: 30, y: 210},  4: {x: 30, y: 280},  5: {x: 30, y: 350},  6: {x: 30, y: 420},
       7: {x: 110, y: 70},  8: {x: 110, y: 140}, 9: {x: 110, y: 210}, 10: {x: 110, y: 280}, 11: {x: 110, y: 350}, 12: {x: 110, y: 420},
@@ -394,19 +415,82 @@
     let currentSelectedTable = null;
     let reservationsData = {};
 
-    function loadReservations() {
-      const local = localStorage.getItem('itapua_reservas');
-      if (local) {
-        try {
-          reservationsData = JSON.parse(local);
-        } catch(e) {
-          reservationsData = {};
-        }
-      }
+    /* =============================================================
+       3. BANCO DE DADOS & PERSISTÊNCIA
+       ============================================================= */
+    async function loadReservations() {
+      // Desenha o mapa imediatamente (previne o sumiço das mesas)
       renderMap();
-      if (currentSelectedTable) renderPanel(currentSelectedTable);
+
+      if (!_supabase) return;
+
+      try {
+        const { data, error } = await _supabase.from('reservas').select('*');
+        if (error) {
+          console.error("Erro no Supabase:", error);
+          return;
+        }
+
+        reservationsData = {};
+        if (data) {
+          data.forEach(row => {
+            reservationsData[`${row.mesa}_${row.cadeira}`] = row.nome;
+          });
+        }
+
+        // Atualiza as cores das mesas com os dados recebidos
+        renderMap();
+        if (currentSelectedTable) renderPanel(currentSelectedTable);
+      } catch (err) {
+        console.error("Erro ao consultar o banco:", err);
+      }
     }
 
+    async function addReservation(tableNum, seatNum) {
+      const name = prompt('Digite o nome da pessoa para o Lugar ' + seatNum + ' da Mesa ' + tableNum + ':');
+      if (!name || name.trim() === '') return;
+
+      if (_supabase) {
+        const { error } = await _supabase
+          .from('reservas')
+          .insert([{ mesa: String(tableNum), cadeira: String(seatNum), nome: name.trim() }]);
+
+        if (error) {
+          alert("Erro ao salvar: " + error.message);
+          return;
+        }
+      } else {
+        // Fallback local se o Supabase não estiver pronto
+        reservationsData[`${tableNum}_${seatNum}`] = name.trim();
+      }
+
+      await loadReservations();
+    }
+
+    async function removeReservation(tableNum, seatNum) {
+      if (!confirm('Deseja cancelar a reserva do Lugar ' + seatNum + ' na Mesa ' + tableNum + '?')) return;
+
+      if (_supabase) {
+        const { error } = await _supabase
+          .from('reservas')
+          .delete()
+          .eq('mesa', String(tableNum))
+          .eq('cadeira', String(seatNum));
+
+        if (error) {
+          alert("Erro ao excluir: " + error.message);
+          return;
+        }
+      } else {
+        delete reservationsData[`${tableNum}_${seatNum}`];
+      }
+
+      await loadReservations();
+    }
+
+    /* =============================================================
+       4. INTERFACE E COMPONENTES
+       ============================================================= */
     function renderMap() {
       const container = document.getElementById('tablesContainer');
       if (!container) return;
@@ -427,7 +511,6 @@
         node.style.top = pos.y + 'px';
         
         node.innerHTML = i + '<span class="seats-count">' + busyCount + '/10</span>';
-
         node.onclick = function() { selectTable(i); };
         container.appendChild(node);
       }
@@ -481,27 +564,6 @@
       }
     }
 
-    function addReservation(tableNum, seatNum) {
-      const name = prompt('Digite o nome da pessoa para o Lugar ' + seatNum + ' da Mesa ' + tableNum + ':');
-      if (!name || name.trim() === '') return;
-
-      const key = tableNum + '_' + seatNum;
-      reservationsData[key] = name.trim();
-      localStorage.setItem('itapua_reservas', JSON.stringify(reservationsData));
-
-      loadReservations();
-    }
-
-    function removeReservation(tableNum, seatNum) {
-      if (!confirm('Deseja cancelar/excluir a reserva do Lugar ' + seatNum + ' na Mesa ' + tableNum + '?')) return;
-
-      const key = tableNum + '_' + seatNum;
-      delete reservationsData[key];
-      localStorage.setItem('itapua_reservas', JSON.stringify(reservationsData));
-
-      loadReservations();
-    }
-
     function printReceipt(name, tableNum, seatNum) {
       document.getElementById('tName').innerText = name;
       document.getElementById('tTable').innerText = tableNum;
@@ -513,12 +575,8 @@
       document.getElementById('ticketModal').style.display = 'none';
     }
 
-    // Executa ao carregar a página sem depender do window.onload
-    document.addEventListener('DOMContentLoaded', function() {
-      loadReservations();
-    });
-    
-    // Fallback caso o DOMContentLoaded já tenha passado
+    // Executa ao carregar a página
+    window.addEventListener('DOMContentLoaded', loadReservations);
     if (document.readyState === 'complete' || document.readyState === 'interactive') {
       loadReservations();
     }
