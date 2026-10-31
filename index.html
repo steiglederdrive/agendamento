@@ -282,6 +282,7 @@ $("#cpf").oninput = e => e.target.value = maskCpf(e.target.value);
 $("#tel").oninput = e => e.target.value = maskTel(e.target.value);
 
 // Impressão digital do arquivo (SHA-256) para barrar o mesmo comprovante em duas inscrições
+const uuid = () => (crypto.randomUUID ? crypto.randomUUID() : ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)));
 async function sha256(file){
   try{ const b = await crypto.subtle.digest("SHA-256", await file.arrayBuffer()); return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join(""); }
   catch(e){ return null; }
@@ -317,7 +318,7 @@ $("#form").onsubmit = async e => {
       if(ja.data===true){ $("#e-arq").textContent="Este comprovante já foi enviado. Se for engano, fale com a organização."; $("#arq").focus(); volta(); return; }
     }
     const ext = (arquivo.name.split(".").pop()||"bin").toLowerCase().replace(/[^a-z0-9]/g,"").slice(0,5) || "bin";
-    const path = crypto.randomUUID()+"."+ext;
+    const path = uuid()+"."+ext;
     const up = await sb.storage.from("comprovantes").upload(path, arquivo, {contentType:arquivo.type});
     if(up.error) throw up.error;
     const { data, error } = await sb.rpc("inscrever", {p_nome:v.nome,p_cpf:v.cpf,p_tel:v.tel,p_email:v.email,p_qtd:+qtd.value,p_arquivo:path,p_hash:hash});
@@ -335,7 +336,7 @@ $("#form").onsubmit = async e => {
       <div><button class="btn" id="btn-nova">Nova inscrição</button></div></div>`;
     $("#btn-nova").onclick = () => location.reload();
   }catch(ex){
-    console.error(ex); toast("Não foi possível enviar agora. Tente novamente em instantes."); volta();
+    console.error(ex); toast("Não foi possível enviar agora. Tente novamente em instantes."+(ex&&ex.message?" ["+ex.message+"]":"")); volta();
   }
 };
 
