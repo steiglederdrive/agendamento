@@ -218,7 +218,7 @@ const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt
 const dt = iso => new Date(iso).toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"});
 
 let regs = [], sel = null;
-const fromDb = d => ({dbid:d.id, id:d.protocolo, nome:d.nome, cpf:d.cpf, tel:d.tel, email:d.email, qtd:d.qtd, status:d.status, obs:d.obs, criado:d.criado_em, arq:d.arquivo_path});
+const fromDb = d => ({enviado:d.ingresso_enviado_em, dbid:d.id, id:d.protocolo, nome:d.nome, cpf:d.cpf, tel:d.tel, email:d.email, qtd:d.qtd, status:d.status, obs:d.obs, criado:d.criado_em, arq:d.arquivo_path});
 function toast(msg){ const t=$("#toast"); t.textContent=msg; t.hidden=false; clearTimeout(toast.h); toast.h=setTimeout(()=>t.hidden=true,3200); }
 
 /* ---------- validações ---------- */
@@ -348,6 +348,14 @@ async function carregar(){
   if(error){ toast("Erro ao carregar: "+error.message); return; }
   regs = data.map(fromDb); renderConf();
 }
+async function enviarIngresso(r){
+  toast("Enviando ingresso para "+r.email+"...");
+  const { data, error } = await sb.functions.invoke("enviar-ingresso", {body:{id:r.dbid}});
+  let msg = data && data.erro; 
+  if(error && !msg){ try{ msg = (await error.context.json()).erro; }catch(e){ msg = error.message; } }
+  if(msg){ toast("Ingresso NÃO enviado: "+msg); return; }
+  r.enviado = new Date().toISOString(); renderConf(); toast("Ingresso enviado para "+r.email);
+}
 async function atualizar(r, status, obs){
   const { error } = await sb.from("inscricoes").update({status, obs}).eq("id", r.dbid);
   if(error){ toast("Erro ao salvar: "+error.message); return false; }
@@ -400,15 +408,18 @@ function renderDetail(){
           <button class="btn danger sm" data-a="recusado">Recusar</button>
           <button class="btn sm" data-a="pendente">Voltar a pendente</button>
         </div>
-        ${r.status==="conferido"?`<div class="note"><b>Ingresso liberado:</b> <span class="mono">${esc(r.id)}</span> (código para o QR da portaria)</div>`:""}
+        ${r.status==="conferido"?`<div class="note"><b>Ingresso liberado:</b> <span class="mono">${esc(r.id)}</span> (código para o QR da portaria)</div>
+        <div class="actions"><button class="btn sm" id="btn-enviar">${r.enviado?"Reenviar ingresso por e-mail":"Enviar ingresso por e-mail"}</button></div>
+        <span class="hint">${r.enviado?"Enviado em "+dt(r.enviado)+" para "+esc(r.email):"Ainda não enviado."}</span>`:""}
       </div>
       <div class="comp" id="comp-box">Carregando comprovante...</div>
     </div>`;
   d.querySelectorAll("[data-a]").forEach(b=>b.onclick=async()=>{
     const s = b.dataset.a;
     const obs = s==="recusado" ? "Recusado manualmente." : s==="conferido" ? "Confirmado manualmente." : r.obs;
-    if(await atualizar(r, s, obs)){ renderConf(); toast("Situação atualizada: "+s); }
+    if(await atualizar(r, s, obs)){ renderConf(); toast("Situação atualizada: "+s); if(s==="conferido") enviarIngresso(r); }
   });
+  const be = d.querySelector("#btn-enviar"); if(be) be.onclick = () => enviarIngresso(r);
   carregaComprovante(r);
 }
 $("#busca").oninput = renderConf; $("#filtro").onchange = renderConf;
