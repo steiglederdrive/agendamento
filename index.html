@@ -105,7 +105,10 @@ dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0}
 dt{color:var(--muted);font-size:13px}
 dd{margin:0;min-width:0;overflow-wrap:anywhere}
 .comp{border:1px dashed var(--line);border-radius:8px;min-height:160px;display:flex;align-items:center;justify-content:center;text-align:center;padding:10px;color:var(--muted);font-size:13px}
-.comp img{max-height:340px;border-radius:6px}
+.comp{flex-direction:column;gap:10px}
+.comp img{max-width:100%;max-height:340px;border-radius:6px;cursor:zoom-in}
+.comp .links{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.comp .links a{text-decoration:none;display:inline-block}
 .actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
 .note{font-size:13px;margin-top:8px}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:14px;max-width:90vw;z-index:20}
@@ -393,10 +396,16 @@ function abrir(id){ sel=id; renderConf(); $("#detail").scrollIntoView({behavior:
 async function carregaComprovante(r){
   const box = $("#comp-box"); if(!box) return;
   if(!r.arq){ box.textContent = "Sem arquivo anexado."; return; }
-  const { data, error } = await sb.storage.from("comprovantes").createSignedUrl(r.arq, 300);
+  const ext = (r.arq.split(".").pop()||"").toLowerCase();
+  const [ver, baixa] = await Promise.all([
+    sb.storage.from("comprovantes").createSignedUrl(r.arq, 300),
+    sb.storage.from("comprovantes").createSignedUrl(r.arq, 300, {download: "comprovante-"+r.id+"."+ext})
+  ]);
   if(sel !== r.id) return;
-  if(error || !data){ box.textContent = "Não foi possível abrir o comprovante."; return; }
-  box.innerHTML = /\.pdf$/i.test(r.arq) ? `<a href="${esc(data.signedUrl)}" target="_blank" rel="noopener">Abrir PDF do comprovante</a>` : `<img src="${esc(data.signedUrl)}" alt="Comprovante enviado">`;
+  if(ver.error || !ver.data){ box.textContent = "Não foi possível abrir o comprovante."; return; }
+  const u = esc(ver.data.signedUrl), d = baixa.data ? esc(baixa.data.signedUrl) : u;
+  const img = /\.pdf$/i.test(r.arq) ? "" : `<a href="${u}" target="_blank" rel="noopener" title="Abrir em tamanho real"><img src="${u}" alt="Comprovante enviado"></a>`;
+  box.innerHTML = img + `<div class="links"><a class="btn sm" href="${u}" target="_blank" rel="noopener">${img?"Abrir em tamanho real":"Abrir PDF do comprovante"}</a><a class="btn sm" href="${d}">Baixar comprovante</a></div>`;
 }
 function renderDetail(){
   const r = regs.find(x=>x.id===sel), d=$("#detail");
