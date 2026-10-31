@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Ingressos Pix</title>
+<title>Ingressos Pix · Abertura das Piscinas</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
 /* Layout: cabeçalho fixo com duas abas (Inscrição / Conferência). Inscrição em coluna única de formulário; conferência em resumo + tabela + painel de detalhe. */
@@ -105,7 +105,7 @@ details.recon summary{cursor:pointer;font-weight:600}
 <body>
 <div class="wrap">
   <header>
-    <div class="brand"><b>Ingressos por Pix</b><span>Jantar Beneficente (evento de exemplo)</span></div>
+    <div class="brand"><b>Ingressos por Pix</b><span>Abertura das Piscinas · Clube Itapuí</span></div>
     <nav role="tablist" aria-label="Área">
       <button role="tab" id="tab-insc" aria-selected="true">Inscrição</button>
       <button role="tab" id="tab-conf" aria-selected="false">Conferência</button>
@@ -136,12 +136,12 @@ details.recon summary{cursor:pointer;font-weight:600}
 
         <section class="step">
           <h3><i>Etapa 2</i> Pagamento</h3>
-          <div class="total"><span class="muted"><span id="t-qtd">1</span> × R$ 40,00</span><b id="t-val">R$ 40,00</b></div>
+          <div class="total"><span class="muted"><span id="t-qtd">1</span> × R$ 20,00</span><b id="t-val">R$ 20,00</b></div>
           <div class="pix">
-            <svg class="qr" id="qr" viewBox="0 0 25 25" role="img" aria-label="QR Code Pix de exemplo"></svg>
+            <svg class="qr" id="qr" viewBox="0 0 25 25" role="img" aria-label="QR Code Pix"></svg>
             <div class="copia" id="copia"></div>
             <div><button type="button" class="btn" id="btn-copy">Copiar código Pix</button></div>
-            <span class="hint">Beneficiário: Associação Exemplo · CNPJ 00.000.000/0001-00. QR Code ilustrativo.</span>
+            <span class="hint">Pix para financeiro.scitapui@gmail.com · Clube Itapuí. Confira o nome do recebedor antes de confirmar o pagamento.</span>
           </div>
         </section>
 
@@ -170,7 +170,7 @@ details.recon summary{cursor:pointer;font-weight:600}
         </div>
         <div class="panel">
           <h3>Evento</h3>
-          <dl style="margin-top:10px"><dt>Data</dt><dd>14/11/2026, 19h30</dd><dt>Local</dt><dd>Salão de Eventos (exemplo)</dd><dt>Valor</dt><dd>R$ 40,00 por ingresso</dd><dt>Limite</dt><dd>Até 6 ingressos por CPF</dd></dl>
+          <dl style="margin-top:10px"><dt>Data</dt><dd>07/11/2026, 16h</dd><dt>Local</dt><dd>Clube Itapuí</dd><dt>Valor</dt><dd>R$ 20,00 por ingresso</dd><dt>Limite</dt><dd>Até 6 ingressos por CPF</dd></dl>
         </div>
         <div class="panel muted" style="font-size:13px">Seus dados são usados somente para controle de entrada e conferência do pagamento, conforme a LGPD.</div>
       </aside>
@@ -216,12 +216,13 @@ details.recon summary{cursor:pointer;font-weight:600}
 </div>
 <div id="toast" class="toast" hidden></div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
 const SUPABASE_URL = "https://ycaeeghhwiieuaugivey.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InljYWVlZ2hod2lpZXVhdWdpdmV5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgwNzY0NjYsImV4cCI6MjA3MzY1MjQ2Nn0.OAAOVPTG-IJSy16FSVipG6qtNCu7T15qpiP361TFxFY"; // chave pública (anon): pode ficar na página
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-const PRECO = 40, MAX = 6;
+const PRECO = 20, MAX = 6;
 const $ = s => document.querySelector(s);
 const brl = v => v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -250,25 +251,26 @@ $("#tab-insc").onclick = () => show("insc"); $("#tab-conf").onclick = () => show
 /* ---------- inscrição ---------- */
 const qtd = $("#qtd");
 for(let i=1;i<=MAX;i++) qtd.add(new Option(i+(i===1?" ingresso":" ingressos"), i));
-const PIX = "00020126580014br.gov.bcb.pix0136exemplo@associacao.org.br5204000053039865406";
+const PIX_CHAVE = "financeiro.scitapui@gmail.com", PIX_NOME = "CLUBE ITAPUI", PIX_CIDADE = "GUAIBA";
+const emv = (id,v) => id + String(v.length).padStart(2,"0") + v;
+function crc16(str){ let c=0xFFFF; for(let i=0;i<str.length;i++){ c^=str.charCodeAt(i)<<8; for(let j=0;j<8;j++) c=(c&0x8000)?((c<<1)^0x1021)&0xFFFF:(c<<1)&0xFFFF; } return c.toString(16).toUpperCase().padStart(4,"0"); }
+function brcode(valor){
+  const p = emv("00","01") + emv("26", emv("00","br.gov.bcb.pix") + emv("01",PIX_CHAVE)) + emv("52","0000") + emv("53","986") + emv("54",valor) + emv("58","BR") + emv("59",PIX_NOME) + emv("60",PIX_CIDADE) + emv("62", emv("05","***")) + "6304";
+  return p + crc16(p);
+}
+function desenhaQR(txt){
+  const q = qrcode(0,"M"); q.addData(txt); q.make();
+  const n = q.getModuleCount(); let r="";
+  for(let y=0;y<n;y++) for(let x=0;x<n;x++) if(q.isDark(y,x)) r+=`<rect x="${x+4}" y="${y+4}" width="1" height="1"/>`;
+  const el=$("#qr"); el.setAttribute("viewBox",`0 0 ${n+8} ${n+8}`); el.innerHTML=`<rect width="${n+8}" height="${n+8}" fill="#fff"/><g fill="#000" shape-rendering="crispEdges">${r}</g>`;
+}
 function atualizaTotal(){
   const n=+qtd.value, v=n*PRECO;
   $("#t-qtd").textContent=n; $("#t-val").textContent=brl(v);
-  const val = v.toFixed(2);
-  $("#copia").textContent = PIX + String(val.length).padStart(2,"0") + val + "5802BR5920ASSOCIACAO EXEMPLO6006GUAIBA62070503***6304A1B2";
+  const code = brcode(v.toFixed(2));
+  $("#copia").textContent = code; desenhaQR(code);
 }
 qtd.onchange = atualizaTotal; atualizaTotal();
-
-(function drawQR(){ /* desenho ilustrativo, não é um QR válido */
-  let svg="", seed=11;
-  const rnd=()=>(seed=(seed*1103515245+12345)&0x7fffffff)/0x7fffffff;
-  const finder=(x,y)=>`<rect x="${x}" y="${y}" width="7" height="7" fill="#14232b"/><rect x="${x+1}" y="${y+1}" width="5" height="5" fill="#fff"/><rect x="${x+2}" y="${y+2}" width="3" height="3" fill="#14232b"/>`;
-  for(let y=0;y<25;y++)for(let x=0;x<25;x++){
-    const inF=(x<8&&y<8)||(x>16&&y<8)||(x<8&&y>16);
-    if(!inF&&rnd()>.52) svg+=`<rect x="${x}" y="${y}" width="1" height="1" fill="#14232b"/>`;
-  }
-  $("#qr").innerHTML = svg+finder(0,0)+finder(18,0)+finder(0,18);
-})();
 
 $("#btn-copy").onclick = async () => {
   const t=$("#copia").textContent;
