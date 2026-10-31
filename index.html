@@ -182,7 +182,7 @@ details.recon summary{cursor:pointer;font-weight:600}
   <main id="view-conf" hidden>
     <form id="form-login" class="panel stack" style="max-width:420px;margin-top:28px" hidden>
       <h2>Acesso da equipe</h2>
-      <label for="l-email">E-mail<input id="l-email" type="email" autocomplete="username"></label>
+      <label for="l-email">Usuário ou e-mail<input id="l-email" type="text" autocomplete="username"></label>
       <label for="l-senha">Senha<input id="l-senha" type="password" autocomplete="current-password"></label>
       <span class="err" id="e-login"></span>
       <div><button class="btn primary" type="submit" id="form-login-btn">Entrar</button></div>
@@ -339,10 +339,12 @@ async function checkSession(){
 }
 $("#form-login").onsubmit = async e => {
   e.preventDefault(); $("#e-login").textContent = "";
-  const { error } = await sb.auth.signInWithPassword({email:$("#l-email").value.trim(), password:$("#l-senha").value});
+  const { error } = await sb.auth.signInWithPassword({email:loginEmail($("#l-email").value), password:$("#l-senha").value});
   if(error){ $("#e-login").textContent = "E-mail ou senha incorretos."; return; }
   $("#l-senha").value = ""; checkSession();
 };
+// "root" é atalho para a conta root@scitapui.local criada no Supabase; a senha fica só lá, nunca na página
+const loginEmail = u => { u = u.trim(); return u.includes("@") ? u : u.toLowerCase() + "@scitapui.local"; };
 $("#btn-sair").onclick = async () => { await sb.auth.signOut(); regs=[]; sel=null; checkSession(); };
 async function carregar(){
   const { data, error } = await sb.from("inscricoes").select("*").order("criado_em",{ascending:false});
