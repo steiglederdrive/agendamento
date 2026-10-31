@@ -22,6 +22,7 @@
   --accent:#3cc6bb; --accent-fg:#06211f; --accent-soft:#12383a;
   --ok:#5fd193; --ok-soft:#133526; --warn:#e8b64c; --warn-soft:#3a2d0e; --bad:#ff8a80; --bad-soft:#40201d; color-scheme:dark}
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--f-body);padding-inline:max(16px,env(safe-area-inset-left,0px)) max(16px,env(safe-area-inset-right,0px));padding-block:0 48px}
 .wrap{max-width:1080px;margin:0 auto}
 header{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;justify-content:space-between;padding-block:18px 14px;border-bottom:1px solid var(--line)}
@@ -333,7 +334,7 @@ $("#form").onsubmit = async e => {
 async function checkSession(){
   const { data } = await sb.auth.getSession();
   const logado = !!data.session;
-  $("#login").hidden = logado; $("#painel").hidden = !logado;
+  $("#form-login").hidden = logado; $("#painel").hidden = !logado;
   $("#quem").textContent = logado ? data.session.user.email : "";
   if(logado) carregar();
 }
