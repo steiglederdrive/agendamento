@@ -111,7 +111,6 @@ details.recon summary{cursor:pointer;font-weight:600}
       <button role="tab" id="tab-conf" aria-selected="false">Conferência</button>
     </nav>
   </header>
-  <div class="proto">Protótipo. Os dados ficam só neste navegador e a chave Pix, os valores e as inscrições são exemplos. Na versão real o painel exige login AD e a conferência usa a API do banco.</div>
 
   <!-- INSCRIÇÃO -->
   <main id="view-insc">
@@ -156,7 +155,6 @@ details.recon summary{cursor:pointer;font-weight:600}
           </label>
           <div style="display:flex;gap:10px;flex-wrap:wrap">
             <button class="btn primary" type="submit">Enviar inscrição</button>
-            <button class="btn" type="button" id="btn-demo">Preencher com exemplo</button>
           </div>
         </section>
       </form>
@@ -182,9 +180,17 @@ details.recon summary{cursor:pointer;font-weight:600}
 
   <!-- CONFERÊNCIA -->
   <main id="view-conf" hidden>
+    <form id="form-login" class="panel stack" style="max-width:420px;margin-top:28px" hidden>
+      <h2>Acesso da equipe</h2>
+      <label for="l-email">E-mail<input id="l-email" type="email" autocomplete="username"></label>
+      <label for="l-senha">Senha<input id="l-senha" type="password" autocomplete="current-password"></label>
+      <span class="err" id="e-login"></span>
+      <div><button class="btn primary" type="submit" id="form-login-btn">Entrar</button></div>
+    </form>
+    <div id="painel" hidden>
     <div style="margin-top:28px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:end">
       <h1>Conferência de pagamentos</h1>
-      <button class="btn danger sm" id="btn-reset">Restaurar dados de exemplo</button>
+      <span><span class="muted" id="quem"></span> <button class="btn sm" id="btn-sair">Sair</button></span>
     </div>
     <div class="stats" id="stats"></div>
 
@@ -192,7 +198,7 @@ details.recon summary{cursor:pointer;font-weight:600}
       <summary>Conciliar com o extrato do banco</summary>
       <p class="muted" style="margin:10px 0">Cole uma linha por Pix recebido, no formato <span class="mono">ID E2E;valor;data</span>. Na versão com API, esta etapa é automática, pelo aviso do banco a cada Pix pago.</p>
       <textarea id="extrato" rows="6" aria-label="Extrato"></textarea>
-      <div class="actions"><button class="btn primary" id="btn-conciliar">Conciliar agora</button><button class="btn" id="btn-extrato-demo">Carregar extrato de exemplo</button></div>
+      <div class="actions"><button class="btn primary" id="btn-conciliar">Conciliar agora</button></div>
       <div class="note" id="recon-out"></div>
     </details>
 
@@ -205,33 +211,25 @@ details.recon summary{cursor:pointer;font-weight:600}
     </div>
     <div class="tablewrap"><table><thead><tr><th>Protocolo</th><th>Nome</th><th>CPF</th><th class="num">Ingr.</th><th class="num">Valor</th><th>Situação</th></tr></thead><tbody id="tbody"></tbody></table></div>
     <div id="detail" class="panel" hidden style="margin-top:16px"></div>
+    </div>
   </main>
 </div>
 <div id="toast" class="toast" hidden></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
-const PRECO = 40, MAX = 6, KEY = "ingressos-pix-proto-v1";
+const SUPABASE_URL = "https://ycaeeghhwiieuaugivey.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InljYWVlZ2hod2lpZXVhdWdpdmV5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgwNzY0NjYsImV4cCI6MjA3MzY1MjQ2Nn0.OAAOVPTG-IJSy16FSVipG6qtNCu7T15qpiP361TFxFY"; // chave pública (anon): pode ficar na página
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const PRECO = 40, MAX = 6;
 const $ = s => document.querySelector(s);
 const brl = v => v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const dt = iso => new Date(iso).toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"});
 
-const SEED = () => [
-  {id:"PX-0001",nome:"Marlene Souza Teixeira",cpf:"529.982.247-25",tel:"(51) 98111-2233",email:"marlene@exemplo.com",qtd:2,e2e:"E90400888202611011412aB3cD4eF5gH",status:"pendente",criado:"2026-11-01T14:15:00",arq:null,obs:""},
-  {id:"PX-0002",nome:"Roberto Lima Fagundes",cpf:"111.444.777-35",tel:"(51) 99876-5432",email:"roberto@exemplo.com",qtd:1,e2e:"E00360305202611020930Zk81QwErTy2",status:"pendente",criado:"2026-11-02T09:31:00",arq:null,obs:""},
-  {id:"PX-0003",nome:"Ana Paula Brandão",cpf:"390.533.447-05",tel:"(51) 98001-7766",email:"ana@exemplo.com",qtd:4,e2e:"E18236120202611021845Hn7Vb2Lm9Xc",status:"pendente",criado:"2026-11-02T18:46:00",arq:null,obs:""},
-  {id:"PX-0004",nome:"Carlos Eduardo Pires",cpf:"168.995.350-09",tel:"(51) 99123-0001",email:"carlos@exemplo.com",qtd:2,e2e:"E60701190202611030710Pq4Rs8Tu1Vw",status:"conferido",criado:"2026-11-03T07:11:00",arq:null,obs:"Conferido no extrato."}
-];
-const EXTRATO_DEMO = [
- "E90400888202611011412aB3cD4eF5gH;80,00;01/11/2026 14:12",
- "E00360305202611020930Zk81QwErTy2;30,00;02/11/2026 09:30",
- "E60701190202611030710Pq4Rs8Tu1Vw;80,00;03/11/2026 07:10"
-].join("\n");
-
-let regs = load();
-function load(){ try{ const r = JSON.parse(localStorage.getItem(KEY)); if(Array.isArray(r)) return r; }catch(e){} return SEED(); }
-function save(){ try{ localStorage.setItem(KEY, JSON.stringify(regs)); }catch(e){ try{ localStorage.setItem(KEY, JSON.stringify(regs.map(r=>({...r,arq:null})))); }catch(_){} } }
-function toast(msg){ const t=$("#toast"); t.textContent=msg; t.hidden=false; clearTimeout(toast.h); toast.h=setTimeout(()=>t.hidden=true,2600); }
+let regs = [], sel = null;
+const fromDb = d => ({dbid:d.id, id:d.protocolo, nome:d.nome, cpf:d.cpf, tel:d.tel, email:d.email, qtd:d.qtd, e2e:d.e2e, status:d.status, obs:d.obs, criado:d.criado_em, arq:d.arquivo_path});
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.hidden=false; clearTimeout(toast.h); toast.h=setTimeout(()=>t.hidden=true,3200); }
 
 /* ---------- validações ---------- */
 function cpfOk(c){ c=c.replace(/\D/g,""); if(c.length!==11||/^(\d)\1+$/.test(c)) return false;
@@ -245,7 +243,7 @@ function show(tab){
   const c = tab==="conf";
   $("#view-insc").hidden = c; $("#view-conf").hidden = !c;
   $("#tab-insc").setAttribute("aria-selected", !c); $("#tab-conf").setAttribute("aria-selected", c);
-  if(c) renderConf();
+  if(c) checkSession();
 }
 $("#tab-insc").onclick = () => show("insc"); $("#tab-conf").onclick = () => show("conf");
 
@@ -262,7 +260,7 @@ function atualizaTotal(){
 qtd.onchange = atualizaTotal; atualizaTotal();
 
 (function drawQR(){ /* desenho ilustrativo, não é um QR válido */
-  let s=7, svg="", seed=11;
+  let svg="", seed=11;
   const rnd=()=>(seed=(seed*1103515245+12345)&0x7fffffff)/0x7fffffff;
   const finder=(x,y)=>`<rect x="${x}" y="${y}" width="7" height="7" fill="#14232b"/><rect x="${x+1}" y="${y+1}" width="5" height="5" fill="#fff"/><rect x="${x+2}" y="${y+2}" width="3" height="3" fill="#14232b"/>`;
   for(let y=0;y<25;y++)for(let x=0;x<25;x++){
@@ -280,24 +278,16 @@ $("#btn-copy").onclick = async () => {
 $("#cpf").oninput = e => e.target.value = maskCpf(e.target.value);
 $("#tel").oninput = e => e.target.value = maskTel(e.target.value);
 
-let arquivo = null; // {nome,tipo,data}
+let arquivo = null; // File
 $("#arq").onchange = e => {
   const f = e.target.files[0]; arquivo = null; $("#e-arq").textContent="";
   if(!f) return;
   if(f.size>5*1024*1024){ $("#e-arq").textContent="Arquivo maior que 5 MB. Envie uma imagem menor."; e.target.value=""; return; }
-  const r = new FileReader();
-  r.onload = () => arquivo = {nome:f.name,tipo:f.type,data:r.result};
-  r.readAsDataURL(f);
+  if(!/^(image\/|application\/pdf)/.test(f.type)){ $("#e-arq").textContent="Envie uma imagem ou um PDF."; e.target.value=""; return; }
+  arquivo = f;
 };
 
-$("#btn-demo").onclick = () => {
-  $("#nome").value="Fernanda Oliveira Rocha"; $("#cpf").value="935.411.347-80"; $("#tel").value="(51) 99900-1122";
-  $("#email").value="fernanda@exemplo.com"; qtd.value=2; atualizaTotal();
-  $("#e2e").value="E75067901202611041620Jd5Ke6Lf7Mg";
-  toast("Exemplo preenchido. Falta anexar um comprovante.");
-};
-
-$("#form").onsubmit = e => {
+$("#form").onsubmit = async e => {
   e.preventDefault();
   const v = {nome:$("#nome").value.trim(), cpf:$("#cpf").value, tel:$("#tel").value, email:$("#email").value.trim(), e2e:$("#e2e").value.trim()};
   const err = {nome:"",cpf:"",tel:"",email:"",e2e:"",arq:""};
@@ -306,33 +296,67 @@ $("#form").onsubmit = e => {
   if(v.tel.replace(/\D/g,"").length<10) err.tel="Informe o telefone com DDD.";
   if(!/^\S+@\S+\.\S+$/.test(v.email)) err.email="E-mail inválido.";
   if(!e2eOk(v.e2e)) err.e2e="O código deve ter 32 caracteres e começar com E. Copie do comprovante.";
-  else if(regs.some(r=>r.e2e===v.e2e)) err.e2e="Este comprovante já foi enviado. Se for engano, fale com a organização.";
   if(!arquivo) err.arq="Anexe o arquivo do comprovante.";
-  const usados = regs.filter(r=>r.cpf===v.cpf && r.status!=="recusado").reduce((a,r)=>a+r.qtd,0);
-  if(!err.cpf && usados + +qtd.value > MAX) err.cpf = `Este CPF já tem ${usados} ingresso(s). O limite é ${MAX}.`;
   for(const k in err) $("#e-"+k).textContent = err[k];
   const first = Object.keys(err).find(k=>err[k]);
   if(first){ (first==="arq"?$("#arq"):$("#"+first)).focus(); return; }
 
-  const n = String(regs.length+1).padStart(4,"0");
-  const reg = {id:"PX-"+n, ...v, qtd:+qtd.value, status:"pendente", criado:new Date().toISOString(), arq:arquivo, obs:""};
-  regs.unshift(reg); save();
-  $("#form").hidden = true; $("#side").hidden = true; $(".grid2").style.display="none";
-  const r = $("#result"); r.hidden=false;
-  r.innerHTML = `<div class="done"><h2>Inscrição recebida</h2>
-    <div class="proto-n">${esc(reg.id)}</div>
-    <p style="margin:0">Guarde este protocolo. Assim que o pagamento de <b>${brl(reg.qtd*PRECO)}</b> for conferido, enviaremos o ingresso para <b>${esc(reg.email)}</b>.</p>
-    <div><button class="btn" id="btn-nova">Nova inscrição</button> <button class="btn primary" id="btn-ver">Ver na conferência</button></div></div>`;
-  $("#btn-nova").onclick = () => { location.reload(); };
-  $("#btn-ver").onclick = () => { show("conf"); abrir(reg.id); };
+  const btn = $("#form button[type=submit]"); btn.disabled = true; btn.textContent = "Enviando...";
+  const volta = () => { btn.disabled = false; btn.textContent = "Enviar inscrição"; };
+  try{
+    const ext = (arquivo.name.split(".").pop()||"bin").toLowerCase().replace(/[^a-z0-9]/g,"").slice(0,5) || "bin";
+    const path = crypto.randomUUID()+"."+ext;
+    const up = await sb.storage.from("comprovantes").upload(path, arquivo, {contentType:arquivo.type});
+    if(up.error) throw up.error;
+    const { data, error } = await sb.rpc("inscrever", {p_nome:v.nome,p_cpf:v.cpf,p_tel:v.tel,p_email:v.email,p_qtd:+qtd.value,p_e2e:v.e2e,p_arquivo:path});
+    if(error){
+      if(error.code==="23505"){ $("#e-e2e").textContent="Este comprovante já foi enviado. Se for engano, fale com a organização."; $("#e2e").focus(); }
+      else if((error.message||"").includes("limite_cpf")){ $("#e-cpf").textContent=`Este CPF atingiu o limite de ${MAX} ingressos.`; $("#cpf").focus(); }
+      else throw error;
+      volta(); return;
+    }
+    $("#form").hidden = true; $("#side").hidden = true; $(".grid2").style.display="none";
+    const r = $("#result"); r.hidden=false;
+    r.innerHTML = `<div class="done"><h2>Inscrição recebida</h2>
+      <div class="proto-n">${esc(data)}</div>
+      <p style="margin:0">Guarde este protocolo. Assim que o pagamento de <b>${brl(+qtd.value*PRECO)}</b> for conferido, enviaremos o ingresso para <b>${esc(v.email)}</b>.</p>
+      <div><button class="btn" id="btn-nova">Nova inscrição</button></div></div>`;
+    $("#btn-nova").onclick = () => location.reload();
+  }catch(ex){
+    console.error(ex); toast("Não foi possível enviar agora. Tente novamente em instantes."); volta();
+  }
 };
 
+/* ---------- login e carga da conferência ---------- */
+async function checkSession(){
+  const { data } = await sb.auth.getSession();
+  const logado = !!data.session;
+  $("#login").hidden = logado; $("#painel").hidden = !logado;
+  $("#quem").textContent = logado ? data.session.user.email : "";
+  if(logado) carregar();
+}
+$("#form-login").onsubmit = async e => {
+  e.preventDefault(); $("#e-login").textContent = "";
+  const { error } = await sb.auth.signInWithPassword({email:$("#l-email").value.trim(), password:$("#l-senha").value});
+  if(error){ $("#e-login").textContent = "E-mail ou senha incorretos."; return; }
+  $("#l-senha").value = ""; checkSession();
+};
+$("#btn-sair").onclick = async () => { await sb.auth.signOut(); regs=[]; sel=null; checkSession(); };
+async function carregar(){
+  const { data, error } = await sb.from("inscricoes").select("*").order("criado_em",{ascending:false});
+  if(error){ toast("Erro ao carregar: "+error.message); return; }
+  regs = data.map(fromDb); renderConf();
+}
+async function atualizar(r, status, obs){
+  const { error } = await sb.from("inscricoes").update({status, obs}).eq("id", r.dbid);
+  if(error){ toast("Erro ao salvar: "+error.message); return false; }
+  r.status = status; r.obs = obs; return true;
+}
+
 /* ---------- conferência ---------- */
-let sel = null;
 function renderConf(){
   const tot = regs.reduce((a,r)=>a+r.qtd*PRECO,0);
-  const conf = regs.filter(r=>r.status==="conferido");
-  const recebido = conf.reduce((a,r)=>a+r.qtd*PRECO,0);
+  const recebido = regs.filter(r=>r.status==="conferido").reduce((a,r)=>a+r.qtd*PRECO,0);
   const cnt = s => regs.filter(r=>r.status===s).length;
   const pct = tot ? Math.round(recebido/tot*100) : 0;
   $("#stats").innerHTML = `
@@ -343,21 +367,26 @@ function renderConf(){
     <div class="stat"><span>Valor conferido</span><b>${brl(recebido)}</b><div class="bar" title="${pct}% do total informado"><i style="width:${pct}%"></i></div></div>`;
   const q = $("#busca").value.toLowerCase().trim(), f = $("#filtro").value;
   const list = regs.filter(r => (!f||r.status===f) && (!q || [r.nome,r.cpf,r.id,r.e2e].join(" ").toLowerCase().includes(q)));
-  $("#tbody").innerHTML = list.length ? list.map(r=>`<tr data-id="${r.id}" class="${sel===r.id?"sel":""}" tabindex="0">
+  $("#tbody").innerHTML = list.length ? list.map(r=>`<tr data-id="${esc(r.id)}" class="${sel===r.id?"sel":""}" tabindex="0">
       <td class="mono">${esc(r.id)}</td><td>${esc(r.nome)}</td><td class="mono">${esc(r.cpf)}</td>
       <td class="num">${r.qtd}</td><td class="num">${brl(r.qtd*PRECO)}</td><td><span class="pill ${r.status}">${r.status}</span></td></tr>`).join("")
-    : `<tr><td colspan="6" class="muted" style="text-align:center;padding:28px">Nenhuma inscrição com este filtro.</td></tr>`;
+    : `<tr><td colspan="6" class="muted" style="text-align:center;padding:28px">Nenhuma inscrição ${regs.length?"com este filtro":"recebida ainda"}.</td></tr>`;
   document.querySelectorAll("#tbody tr[data-id]").forEach(tr=>{ tr.onclick=()=>abrir(tr.dataset.id); tr.onkeydown=e=>{ if(e.key==="Enter") abrir(tr.dataset.id); }; });
-  if(sel) renderDetail();
+  if(sel) renderDetail(); else $("#detail").hidden = true;
 }
 function abrir(id){ sel=id; renderConf(); $("#detail").scrollIntoView({behavior:"smooth",block:"nearest"}); }
+async function carregaComprovante(r){
+  const box = $("#comp-box"); if(!box) return;
+  if(!r.arq){ box.textContent = "Sem arquivo anexado."; return; }
+  const { data, error } = await sb.storage.from("comprovantes").createSignedUrl(r.arq, 300);
+  if(sel !== r.id) return;
+  if(error || !data){ box.textContent = "Não foi possível abrir o comprovante."; return; }
+  box.innerHTML = /\.pdf$/i.test(r.arq) ? `<a href="${esc(data.signedUrl)}" target="_blank" rel="noopener">Abrir PDF do comprovante</a>` : `<img src="${esc(data.signedUrl)}" alt="Comprovante enviado">`;
+}
 function renderDetail(){
   const r = regs.find(x=>x.id===sel), d=$("#detail");
   if(!r){ d.hidden=true; return; }
   d.hidden=false;
-  const comp = !r.arq ? `Comprovante de exemplo, sem arquivo anexado.`
-    : r.arq.tipo.startsWith("image/") ? `<img src="${r.arq.data}" alt="Comprovante enviado">`
-    : `Arquivo PDF: ${esc(r.arq.nome)}`;
   d.innerHTML = `<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap"><h2>${esc(r.id)} · ${esc(r.nome)}</h2><span class="pill ${r.status}">${r.status}</span></div>
     <div class="detail">
       <div><dl>
@@ -370,40 +399,38 @@ function renderDetail(){
           <button class="btn danger sm" data-a="recusado">Recusar</button>
           <button class="btn sm" data-a="pendente">Voltar a pendente</button>
         </div>
-        ${r.status==="conferido"?`<div class="note"><b>Ingresso liberado:</b> <span class="mono">${esc(r.id)}-${r.e2e.slice(-6).toUpperCase()}</span> (código para o QR da portaria)</div>`:""}
+        ${r.status==="conferido"?`<div class="note"><b>Ingresso liberado:</b> <span class="mono">${esc(r.id)}-${esc(r.e2e.slice(-6).toUpperCase())}</span> (código para o QR da portaria)</div>`:""}
       </div>
-      <div class="comp">${comp}</div>
+      <div class="comp" id="comp-box">Carregando comprovante...</div>
     </div>`;
-  d.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>{
-    r.status=b.dataset.a;
-    if(r.status==="recusado") r.obs="Recusado manualmente.";
-    if(r.status==="conferido") r.obs="Confirmado manualmente.";
-    save(); renderConf(); toast("Situação atualizada: "+r.status);
+  d.querySelectorAll("[data-a]").forEach(b=>b.onclick=async()=>{
+    const s = b.dataset.a;
+    const obs = s==="recusado" ? "Recusado manualmente." : s==="conferido" ? "Confirmado manualmente." : r.obs;
+    if(await atualizar(r, s, obs)){ renderConf(); toast("Situação atualizada: "+s); }
   });
+  carregaComprovante(r);
 }
 $("#busca").oninput = renderConf; $("#filtro").onchange = renderConf;
 
-$("#btn-extrato-demo").onclick = () => $("#extrato").value = EXTRATO_DEMO;
-$("#btn-conciliar").onclick = () => {
+$("#btn-conciliar").onclick = async () => {
   const mapa = {};
   $("#extrato").value.split("\n").map(l=>l.trim()).filter(Boolean).forEach(l=>{
     const [id,val] = l.split(";"); if(id&&val) mapa[id.trim()] = parseFloat(val.replace(/\./g,"").replace(",","."));
   });
   let ok=0, div=0, nao=0;
-  regs.filter(r=>r.status==="pendente"||r.status==="divergente").forEach(r=>{
+  for(const r of regs.filter(r=>r.status==="pendente"||r.status==="divergente")){
     const v = mapa[r.e2e], esperado = r.qtd*PRECO;
-    if(v===undefined){ nao++; r.obs="ID E2E não encontrado no extrato."; }
-    else if(Math.abs(v-esperado)<0.005){ r.status="conferido"; r.obs="Conferido no extrato."; ok++; }
-    else { r.status="divergente"; r.obs=`Extrato: ${brl(v)}. Esperado: ${brl(esperado)}.`; div++; }
-  });
-  save(); renderConf();
+    if(v===undefined){ nao++; await atualizar(r, r.status, "ID E2E não encontrado no extrato."); }
+    else if(Math.abs(v-esperado)<0.005){ if(await atualizar(r,"conferido","Conferido no extrato.")) ok++; }
+    else { if(await atualizar(r,"divergente",`Extrato: ${brl(v)}. Esperado: ${brl(esperado)}.`)) div++; }
+  }
+  renderConf();
   $("#recon-out").innerHTML = `<b>${ok}</b> conferido(s), <b>${div}</b> divergente(s), <b>${nao}</b> não localizado(s) no extrato.`;
 };
 $("#btn-csv").onclick = async () => {
   const csv = ["protocolo;nome;cpf;ingressos;valor;situacao;e2e", ...regs.map(r=>[r.id,r.nome,r.cpf,r.qtd,(r.qtd*PRECO).toFixed(2),r.status,r.e2e].join(";"))].join("\n");
   try{ await navigator.clipboard.writeText(csv); toast("Lista copiada. Cole numa planilha."); } catch(e){ toast("Não foi possível copiar neste navegador."); }
 };
-$("#btn-reset").onclick = () => { regs = SEED(); sel=null; save(); renderConf(); toast("Dados de exemplo restaurados"); };
 
 if(location.hash==="#conferencia") show("conf");
 </script>
