@@ -518,7 +518,10 @@ async function enviarVoucher(r){
   const doc = montaVoucher(r); if(!doc) return false;
   const pdf = doc.output("datauristring").split(",")[1];
   const { data, error } = await sb.functions.invoke("super-service", { body: { protocolo: r.id, pdf_base64: pdf } });
-  if(error || !data || !data.ok){ toast("Voucher não enviado por e-mail. Gere o PDF e envie manualmente."); console.error(error||data); return false; }
+  if(error || !data || !data.ok){
+    let motivo = ""; try{ const j = await error.context.json(); motivo = [j.erro, j.detalhe].filter(Boolean).join(": "); }catch(_){ motivo = (error && error.message) || ""; }
+    toast("Voucher não enviado por e-mail"+(motivo?" ["+motivo+"]":"")+". Gere o PDF e envie manualmente."); console.error(error||data); return false;
+  }
   r.enviado = data.enviado_em || new Date().toISOString(); toast("Voucher enviado para "+r.email); return true;
 }
 $("#busca").oninput = renderConf; $("#filtro").onchange = renderConf;
