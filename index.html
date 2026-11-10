@@ -168,7 +168,7 @@ dd{margin:0;min-width:0;overflow-wrap:anywhere}
           <h3><i>Etapa 3</i> Comprovante</h3>
           <label for="arq">Arquivo do comprovante (imagem ou PDF, até 5 MB)<input id="arq" type="file" accept="image/*,application/pdf"><span class="err" id="e-arq"></span></label>
           <div style="display:flex;gap:10px;flex-wrap:wrap">
-            <button class="btn primary" type="submit">Enviar inscrição</button>
+            <button class="btn primary" type="submit">Enviar</button>
           </div>
         </section>
       </form>
@@ -324,7 +324,7 @@ $("#form").onsubmit = async e => {
   if(first){ (first==="arq"?$("#arq"):$("#"+first)).focus(); return; }
 
   const btn = $("#form button[type=submit]"); btn.disabled = true; btn.textContent = "Enviando...";
-  const volta = () => { btn.disabled = false; btn.textContent = "Enviar inscrição"; };
+  const volta = () => { btn.disabled = false; btn.textContent = "Enviar"; };
   try{
     const hash = await sha256(arquivo);
     if(hash){
