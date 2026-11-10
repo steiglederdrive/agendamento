@@ -245,7 +245,7 @@ const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt
 const dt = iso => new Date(iso).toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"});
 
 let regs = [], sel = null;
-const fromDb = d => ({enviado:d.ingresso_enviado_em, dbid:d.id, id:d.protocolo, nome:d.nome, cpf:d.cpf, tel:d.tel, email:d.email, qtd:d.qtd, status:d.status, obs:d.obs, criado:d.criado_em, arq:d.arquivo_path});
+const fromDb = d => ({retirado:d.retirado_em, enviado:d.ingresso_enviado_em, dbid:d.id, id:d.protocolo, nome:d.nome, cpf:d.cpf, tel:d.tel, email:d.email, qtd:d.qtd, status:d.status, obs:d.obs, criado:d.criado_em, arq:d.arquivo_path});
 function toast(msg){ const t=$("#toast"); t.textContent=msg; t.hidden=false; clearTimeout(toast.h); toast.h=setTimeout(()=>t.hidden=true,3200); }
 
 /* ---------- validações ---------- */
@@ -392,13 +392,14 @@ function renderConf(){
     <div class="stat"><span>Inscrições</span><b>${regs.length}</b></div>
     <div class="stat"><span>Galetos</span><b>${regs.filter(r=>r.status!=="recusado").reduce((a,r)=>a+r.qtd,0)}</b></div>
     <div class="stat"><span>Aguardando conferência</span><b>${cnt("pendente")}</b></div>
+    <div class="stat"><span>Galetos retirados</span><b>${regs.filter(r=>r.status==="conferido"&&r.retirado).reduce((a,r)=>a+r.qtd,0)} de ${regs.filter(r=>r.status==="conferido").reduce((a,r)=>a+r.qtd,0)}</b></div>
     <div class="stat"><span>Divergentes</span><b>${cnt("divergente")}</b></div>
     <div class="stat"><span>Valor conferido</span><b>${brl(recebido)}</b><div class="bar" title="${pct}% do total informado"><i style="width:${pct}%"></i></div></div>`;
   const q = $("#busca").value.toLowerCase().trim(), f = $("#filtro").value;
   const list = regs.filter(r => (!f||r.status===f) && (!q || [r.nome,r.cpf,r.id].join(" ").toLowerCase().includes(q)));
   $("#tbody").innerHTML = list.length ? list.map(r=>`<tr data-id="${esc(r.id)}" class="${sel===r.id?"sel":""}" tabindex="0">
       <td class="mono">${esc(r.id)}</td><td>${esc(r.nome)}</td><td class="mono">${esc(r.cpf)}</td>
-      <td class="num">${r.qtd}</td><td class="num">${brl(r.qtd*PRECO)}</td><td><span class="pill ${r.status}">${r.status}</span></td></tr>`).join("")
+      <td class="num">${r.qtd}</td><td class="num">${brl(r.qtd*PRECO)}</td><td><span class="pill ${r.status}">${r.status}</span>${r.retirado?` <span class="muted" title="Retirado em ${esc(dt(r.retirado))}">· retirado</span>`:""}</td></tr>`).join("")
     : `<tr><td colspan="6" class="muted" style="text-align:center;padding:28px">Nenhuma inscrição ${regs.length?"com este filtro":"recebida ainda"}.</td></tr>`;
   document.querySelectorAll("#tbody tr[data-id]").forEach(tr=>{ tr.onclick=()=>abrir(tr.dataset.id); tr.onkeydown=e=>{ if(e.key==="Enter") abrir(tr.dataset.id); }; });
   if(sel) renderDetail(); else $("#detail").hidden = true;
@@ -448,7 +449,7 @@ function renderDetail(){
           <button class="btn danger sm" data-a="recusado">Recusar</button>
           <button class="btn sm" data-a="pendente">Voltar a pendente</button>
         </div>
-        ${r.status==="conferido"?`<div class="note"><b>Galeto liberado:</b> <span class="mono">${esc(r.id)}</span> (código para o QR da portaria)</div><div class="actions" style="margin-top:10px"><button class="btn primary sm" id="btn-voucher">Gerar voucher de retirada (PDF)</button> <button class="btn sm" id="btn-voucher-mail">${r.enviado?"Reenviar voucher por e-mail":"Enviar voucher por e-mail"}</button></div>${r.enviado?`<div class="note">Voucher enviado por e-mail em ${dt(r.enviado)}.</div>`:""}`:""}
+        ${r.status==="conferido"?`<div class="note"><b>Galeto liberado:</b> <span class="mono">${esc(r.id)}</span> (código para o QR da portaria)</div><div class="actions" style="margin-top:10px"><button class="btn primary sm" id="btn-voucher">Gerar voucher de retirada (PDF)</button> <button class="btn sm" id="btn-retirado">${r.retirado?"Desfazer retirada":"Marcar como retirado"}</button> <button class="btn sm" id="btn-voucher-mail">${r.enviado?"Reenviar voucher por e-mail":"Enviar voucher por e-mail"}</button></div>${r.enviado?`<div class="note">Voucher enviado por e-mail em ${dt(r.enviado)}.</div>`:""}${r.retirado?`<div class="note"><b>Galeto retirado</b> em ${dt(r.retirado)}.</div>`:""}`:""}
       </div>
       <div class="comp" id="comp-box">Carregando comprovante...</div>
     </div>`;
@@ -463,6 +464,14 @@ function renderDetail(){
     }
   });
   const bv = $("#btn-voucher"); if(bv) bv.onclick = () => gerarVoucher(r);
+  const br = $("#btn-retirado"); if(br) br.onclick = async () => {
+    if(r.retirado && !confirm("Desfazer a retirada deste galeto?")) return;
+    const novo = r.retirado ? null : new Date().toISOString();
+    br.disabled = true;
+    const { error } = await sb.from("inscricoes").update({retirado_em: novo}).eq("id", r.dbid);
+    if(error){ toast("Não foi possível salvar a retirada: "+error.message); br.disabled = false; return; }
+    r.retirado = novo; renderConf(); toast(novo ? "Retirada registrada" : "Retirada desfeita");
+  };
   const bm = $("#btn-voucher-mail"); if(bm) bm.onclick = async () => { if(r.enviado && !confirm("O voucher já foi enviado. Enviar novamente?")) return; bm.disabled = true; if(await enviarVoucher(r)) renderConf(); else bm.disabled = false; };
   carregaComprovante(r);
 }
@@ -528,7 +537,7 @@ $("#busca").oninput = renderConf; $("#filtro").onchange = renderConf;
 
 $("#btn-csv").onclick = async () => {
   const cel = v => { let s=String(v??""); if(/^[=+\-@\t\r]/.test(s)) s="'"+s; return '"'+s.replace(/"/g,'""')+'"'; };
-  const csv = ["protocolo;nome;cpf;galetos;valor;situacao", ...regs.map(r=>[r.id,r.nome,r.cpf,r.qtd,(r.qtd*PRECO).toFixed(2),r.status].map(cel).join(";"))].join("\n");
+  const csv = ["protocolo;nome;cpf;galetos;valor;situacao;retirado", ...regs.map(r=>[r.id,r.nome,r.cpf,r.qtd,(r.qtd*PRECO).toFixed(2),r.status,r.retirado?"sim":"nao"].map(cel).join(";"))].join("\n");
   try{ await navigator.clipboard.writeText(csv); toast("Lista copiada. Cole numa planilha."); } catch(e){ toast("Não foi possível copiar neste navegador."); }
 };
 
