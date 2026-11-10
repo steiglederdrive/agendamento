@@ -517,7 +517,7 @@ async function enviarVoucher(r){
   if(!r.email){ toast("Inscrição sem e-mail."); return false; }
   const doc = montaVoucher(r); if(!doc) return false;
   const pdf = doc.output("datauristring").split(",")[1];
-  const { data, error } = await sb.functions.invoke("enviar-voucher", { body: { protocolo: r.id, pdf_base64: pdf } });
+  const { data, error } = await sb.functions.invoke("super-service", { body: { protocolo: r.id, pdf_base64: pdf } });
   if(error || !data || !data.ok){ toast("Voucher não enviado por e-mail. Gere o PDF e envie manualmente."); console.error(error||data); return false; }
   r.enviado = data.enviado_em || new Date().toISOString(); toast("Voucher enviado para "+r.email); return true;
 }
