@@ -448,7 +448,7 @@ function renderDetail(){
           <button class="btn danger sm" data-a="recusado">Recusar</button>
           <button class="btn sm" data-a="pendente">Voltar a pendente</button>
         </div>
-        ${r.status==="conferido"?`<div class="note"><b>Galeto liberado:</b> <span class="mono">${esc(r.id)}</span> (código para o QR da portaria)</div><div class="actions" style="margin-top:10px"><button class="btn primary sm" id="btn-voucher">Gerar voucher de retirada (PDF)</button></div>`:""}
+        ${r.status==="conferido"?`<div class="note"><b>Galeto liberado:</b> <span class="mono">${esc(r.id)}</span> (código para o QR da portaria)</div><div class="actions" style="margin-top:10px"><button class="btn primary sm" id="btn-voucher">Gerar voucher de retirada (PDF)</button> <button class="btn sm" id="btn-voucher-mail">${r.enviado?"Reenviar voucher por e-mail":"Enviar voucher por e-mail"}</button></div>${r.enviado?`<div class="note">Voucher enviado por e-mail em ${dt(r.enviado)}.</div>`:""}`:""}
       </div>
       <div class="comp" id="comp-box">Carregando comprovante...</div>
     </div>`;
@@ -457,16 +457,20 @@ function renderDetail(){
     if(s==="recusado" && !confirm("Recusar esta inscrição?")) return;
     const nota = s==="recusado" ? "Recusado manualmente." : s==="conferido" ? "Confirmado manualmente." : "";
     const obs = nota ? [r.obs, nota].filter(Boolean).join(" | ") : r.obs;
-    if(await atualizar(r, s, obs)){ renderConf(); toast("Situação atualizada: "+s); }
+    if(await atualizar(r, s, obs)){
+      renderConf(); toast("Situação atualizada: "+s);
+      if(s==="conferido" && !r.enviado && r.email){ if(await enviarVoucher(r)) renderConf(); }
+    }
   });
   const bv = $("#btn-voucher"); if(bv) bv.onclick = () => gerarVoucher(r);
+  const bm = $("#btn-voucher-mail"); if(bm) bm.onclick = async () => { if(r.enviado && !confirm("O voucher já foi enviado. Enviar novamente?")) return; bm.disabled = true; if(await enviarVoucher(r)) renderConf(); else bm.disabled = false; };
   carregaComprovante(r);
 }
 // ---------- voucher de retirada (PDF gerado no navegador) ----------
-function gerarVoucher(r){
+function montaVoucher(r){
   try{
-    if(!window.jspdf){ toast("Biblioteca de PDF não carregou. Recarregue a página."); return; }
-    if(r.status!=="conferido"){ toast("Confirme o pagamento antes de gerar o voucher."); return; }
+    if(!window.jspdf){ toast("Biblioteca de PDF não carregou. Recarregue a página."); return null; }
+    if(r.status!=="conferido"){ toast("Confirme o pagamento antes de gerar o voucher."); return null; }
     const doc = new window.jspdf.jsPDF({unit:"mm",format:"a4"});
     const W = 210, verde=[11,127,119], faixa=[11,127,119];
     // faixa superior
@@ -504,8 +508,18 @@ function gerarVoucher(r){
     // rodapé
     doc.setFontSize(9); doc.setTextColor(120,120,120);
     doc.text("Voucher pessoal e intransferível, válido uma única vez. Guarde este arquivo até a retirada.",W/2,282,{align:"center"});
-    doc.save("voucher-galeto-"+r.id+".pdf");
-  }catch(e){ console.error(e); toast("Não foi possível gerar o voucher."); }
+    return doc;
+  }catch(e){ console.error(e); toast("Não foi possível gerar o voucher."); return null; }
+}
+function gerarVoucher(r){ const doc = montaVoucher(r); if(doc) doc.save("voucher-galeto-"+r.id+".pdf"); }
+// envia o voucher por e-mail: a função do Supabase confere o login e o pagamento, e usa o e-mail gravado no banco
+async function enviarVoucher(r){
+  if(!r.email){ toast("Inscrição sem e-mail."); return false; }
+  const doc = montaVoucher(r); if(!doc) return false;
+  const pdf = doc.output("datauristring").split(",")[1];
+  const { data, error } = await sb.functions.invoke("enviar-voucher", { body: { protocolo: r.id, pdf_base64: pdf } });
+  if(error || !data || !data.ok){ toast("Voucher não enviado por e-mail. Gere o PDF e envie manualmente."); console.error(error||data); return false; }
+  r.enviado = data.enviado_em || new Date().toISOString(); toast("Voucher enviado para "+r.email); return true;
 }
 $("#busca").oninput = renderConf; $("#filtro").onchange = renderConf;
 
