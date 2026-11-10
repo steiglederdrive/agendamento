@@ -111,6 +111,7 @@ dd{margin:0;min-width:0;overflow-wrap:anywhere}
 .comp{border:1px dashed var(--line);border-radius:8px;min-height:160px;display:flex;align-items:center;justify-content:center;text-align:center;padding:10px;color:var(--muted);font-size:13px}
 .comp{flex-direction:column;gap:10px}
 .comp img{max-width:100%;max-height:340px;border-radius:6px;cursor:zoom-in}
+.comp iframe{width:100%;height:340px;border:1px solid var(--line);border-radius:6px;background:#fff}
 .comp .links{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
 .comp .links a{text-decoration:none;display:inline-block}
 .actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
@@ -403,6 +404,7 @@ function renderConf(){
   if(sel) renderDetail(); else $("#detail").hidden = true;
 }
 function abrir(id){ sel=id; renderConf(); $("#detail").scrollIntoView({behavior:"smooth",block:"nearest"}); }
+let comprovanteUrl = null;
 async function carregaComprovante(r){
   const box = $("#comp-box"); if(!box) return;
   if(!r.arq){ box.textContent = "Sem arquivo anexado."; return; }
@@ -415,7 +417,20 @@ async function carregaComprovante(r){
   if(ver.error || !ver.data){ box.textContent = "Não foi possível abrir o comprovante."; return; }
   const u = esc(ver.data.signedUrl), d = baixa.data ? esc(baixa.data.signedUrl) : u;
   const img = /\.pdf$/i.test(r.arq) ? "" : `<a href="${u}" target="_blank" rel="noopener" title="Abrir em tamanho real"><img src="${u}" alt="Comprovante enviado"></a>`;
-  box.innerHTML = img + `<div class="links"><a class="btn sm" href="${u}" target="_blank" rel="noopener">${img?"Abrir em tamanho real":"Abrir PDF do comprovante"}</a><a class="btn sm" href="${d}">Baixar comprovante</a></div>`;
+  const ehPdf = /\.pdf$/i.test(r.arq);
+  box.innerHTML = (ehPdf ? `<div id="comp-prev" class="muted">Carregando prévia...</div>` : "") + img + `<div class="links"><a class="btn sm" href="${u}" target="_blank" rel="noopener">${img?"Abrir em tamanho real":"Abrir PDF do comprovante"}</a><a class="btn sm" href="${d}">Baixar comprovante</a></div>`;
+  if(ehPdf){
+    // prévia do PDF: baixa o arquivo e mostra no próprio quadro (sem depender de a URL permitir exibição embutida)
+    try{
+      const resp = await fetch(ver.data.signedUrl); if(!resp.ok) throw new Error("http "+resp.status);
+      const blob = new Blob([await resp.arrayBuffer()], {type:"application/pdf"});
+      const p = $("#comp-prev"); if(sel !== r.id || !p) return;
+      if(comprovanteUrl) URL.revokeObjectURL(comprovanteUrl);
+      comprovanteUrl = URL.createObjectURL(blob);
+      const fr = document.createElement("iframe"); fr.src = comprovanteUrl; fr.title = "Prévia do comprovante em PDF";
+      p.replaceWith(fr);
+    }catch(e){ const p = $("#comp-prev"); if(p) p.textContent = "Prévia indisponível. Use os botões abaixo."; }
+  }
 }
 function renderDetail(){
   const r = regs.find(x=>x.id===sel), d=$("#detail");
@@ -453,9 +468,9 @@ function gerarVoucher(r){
     if(!window.jspdf){ toast("Biblioteca de PDF não carregou. Recarregue a página."); return; }
     if(r.status!=="conferido"){ toast("Confirme o pagamento antes de gerar o voucher."); return; }
     const doc = new window.jspdf.jsPDF({unit:"mm",format:"a4"});
-    const W = 210, verde=[11,127,119], azul=[23,52,125];
+    const W = 210, verde=[11,127,119], faixa=[11,127,119];
     // faixa superior
-    doc.setFillColor(...azul); doc.rect(0,0,W,38,"F");
+    doc.setFillColor(...faixa); doc.rect(0,0,W,38,"F");
     const lg = document.querySelector('img[alt="Clube Itapuí, 100 anos"]');
     if(lg && lg.naturalWidth){ const c=document.createElement("canvas"); c.width=c.height=240; const x=c.getContext("2d"); x.fillStyle="#fff"; x.fillRect(0,0,240,240); x.drawImage(lg,130,170,400,400,0,0,240,240); doc.addImage(c.toDataURL("image/jpeg",0.92),"JPEG",14,6,26,26); }
     doc.setTextColor(255,255,255); doc.setFont("helvetica","bold"); doc.setFontSize(22); doc.text("Galeto Itapuí",48,19);
